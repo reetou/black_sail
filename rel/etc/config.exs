@@ -28,7 +28,7 @@ config :nostrum,
        num_shards: :auto
 
 config :nosedrum,
-       prefix: System.get_env("BOT_PREFIX") || "!"
+       prefix: "!"
 
 config :mnesia, dir: '.mnesia/#{Mix.env}/#{node()}'
 
