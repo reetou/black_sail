@@ -19,7 +19,7 @@ defmodule Bot.ConsumerSupervisor do
     |> IO.inspect(label: "Schedulers in total")
     children =
       for n <- 1..System.schedulers_online() do
-        IO.inspect(n, label: "Starting Bot.Consumer for scheduler")
+#        IO.inspect(n, label: "Starting Bot.Consumer for scheduler")
         Supervisor.child_spec({Bot.Consumer, []}, id: {:bot, :consumer, n})
       end
     Supervisor.init(children, strategy: :one_for_one)

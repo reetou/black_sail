@@ -86,7 +86,7 @@ defmodule Bot.Consumer.Ready do
       Register.recreate_roles(guild_id)
       Task.start(fn -> Helpers.delete_game_channels_without_parent(guild_id) end)
     end)
-    :ok = Api.update_status(:online, "you | !help", 3)
+    :ok = Api.update_status(:online, "Elixir Docs | !help", 3)
   end
 
   defp load_commands do
