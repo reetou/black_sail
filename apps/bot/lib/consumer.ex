@@ -43,5 +43,7 @@ defmodule Bot.Consumer do
   def handle_event({ event, _data }) do
     IO.inspect(event, label: "Got unhandled event")
   end
+  def handle_event(_other) do
+  end
 
 end
