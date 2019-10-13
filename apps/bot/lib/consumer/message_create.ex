@@ -3,7 +3,7 @@ defmodule Bot.Consumer.MessageCreate do
 
   @nosedrum_storage_implementation Nosedrum.Storage.ETS
 
-  alias Nosedrum.Invoker.Split, as: CommandInvoker
+  alias Bot.Invoker.Split, as: CommandInvoker
   alias Nostrum.Struct.Message
 
   def handle(msg) do
