@@ -19,6 +19,7 @@ defmodule Bot.Consumer do
   @impl true
   def handle_event({:MESSAGE_CREATE, %{ content: "!" <> command } = msg, _ws_state}) do
     unless msg.author.bot do
+      IO.inspect(command, label: "Will handle command #{command}")
       MessageCreate.handle(msg)
     end
   end
