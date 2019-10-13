@@ -16,10 +16,11 @@ defmodule Bot.Helpers do
   @game_channel_prefix "Канал пати"
   @rules_title "Правила очень простые:"
   @rules_text """
-  1. Не быть мудаком
-  2. Не оскорблять других людей и их родителей
-  3. Не спамить и не рекламировать ничего
-  4. Не присваивать чужое
+1. Не быть мудаком
+2. Не оскорблять других людей и их родителей
+3. Не спамить и не рекламировать
+4. Не присваивать чужое
+5. Не обходить наказания
 """
   @special_channels [Party.search_channel, Register.stats_channel, @logs_channel, @errors_channel, @rules_channel]
 
