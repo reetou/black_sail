@@ -50,20 +50,12 @@ defmodule Bot.Cogs.Update do
       """
 
   @impl true
-  def predicates, do: [&Predicates.guild_only/1]
+  def predicates, do: [&Predicates.guild_only/1, &CustomPredicates.is_stats_channel?/1]
 
   def command, do: @command
 
   @impl true
-  def command(msg, args) do
-    case CustomPredicates.is_stats_channel?(msg) do
-      {:ok, _msg} -> execute_command(msg, args)
-      {:error, reason} -> Helpers.reply_and_delete_message(msg.channel_id, reason)
-    end
-  end
-
-  @impl true
-  def execute_command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, _args) do
+  def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, _args) do
     IO.inspect(msg, label: "Executing command #{msg.content}")
     msg_channel_id = msg.channel_id
     case Helpers.create_channel_if_not_exists(@stats_channel, guild_id) do

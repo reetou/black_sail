@@ -55,7 +55,7 @@ defmodule Bot.Cogs.Register do
       """
 
   @impl true
-  def predicates, do: [&Predicates.guild_only/1]
+  def predicates, do: [&Predicates.guild_only/1, &CustomPredicates.is_stats_channel?/1]
 
   def command, do: @command
   def stats_channel, do: @stats_channel
@@ -83,14 +83,6 @@ defmodule Bot.Cogs.Register do
     [kdr_roles, win_rate_roles]
     |> Stream.concat()
     |> Enum.each(fn { role_name, _role_data } -> Helpers.create_role_if_not_exists(role_name, guild_id) end)
-  end
-
-  @impl true
-  def command(msg, args) do
-    case CustomPredicates.is_stats_channel?(msg) do
-      {:ok, _msg} -> execute_command(msg, args)
-      {:error, reason} -> Helpers.reply_and_delete_message(msg.channel_id, reason)
-    end
   end
 
   def assign_role_for_win_rate(win_rate, guild_id) do
@@ -128,7 +120,7 @@ defmodule Bot.Cogs.Register do
   end
 
   @impl true
-  def execute_command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, args) do
+  def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, args) do
     IO.inspect(args, label: "ARGS")
 #    IO.inspect(msg, label: "Message")
     msg_channel_id = msg.channel_id

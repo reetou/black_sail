@@ -60,18 +60,10 @@ defmodule Bot.Cogs.Party do
       """
 
   @impl true
-  def predicates, do: [&Predicates.guild_only/1]
+  def predicates, do: [&Predicates.guild_only/1, &CustomPredicates.is_party_search_channel?/1]
 
   def command, do: @command
   def search_channel, do: @search_channel
-
-  @impl true
-  def command(msg, args) do
-    case CustomPredicates.is_party_search_channel?(msg) do
-      {:ok, _msg} -> execute_command(msg, args)
-      {:error, reason} -> Helpers.reply_and_delete_message(msg.channel_id, reason)
-    end
-  end
 
   def recreate_channel(guild_id) do
     Helpers.delete_channel_if_exists(@search_channel, guild_id)
@@ -87,7 +79,7 @@ defmodule Bot.Cogs.Party do
   end
 
   @impl true
-  def execute_command(%{ guild_id: guild_id } = msg, _args) do
+  def command(%{ guild_id: guild_id } = msg, _args) do
     IO.inspect(msg, label: "Executing command #{msg.content}")
     usernameWithDiscriminator = msg.author.username <> "#" <> msg.author.discriminator
     channel_name_for_member = get_channel_name_for_member(usernameWithDiscriminator)

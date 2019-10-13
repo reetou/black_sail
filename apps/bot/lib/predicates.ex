@@ -23,9 +23,6 @@ defmodule Bot.Predicates do
     case Converters.to_channel("#{channel_id}", guild_id) do
       {:ok, %{ name: name }} when name == expected_channel -> {:ok, msg}
       _ ->
-        Task.start(fn ->
-          Api.delete_message(channel_id, msg_id)
-        end)
         with {:ok, %{ id: expected_channel_id }} <- Converters.to_channel(expected_channel, guild_id) do
           {:error, "<@#{msg.author.id}>, эта команда доступна только в канале <##{expected_channel_id}>"}
         else _err ->
