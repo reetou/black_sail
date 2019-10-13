@@ -21,7 +21,7 @@ defmodule Bot.Helpers do
   3. Не спамить и не рекламировать ничего
   4. Не присваивать чужое
 """
-  @special_channels [Party.search_channel, Register.stats_channel, @logs_channel, @errors_channel]
+  @special_channels [Party.search_channel, Register.stats_channel, @logs_channel, @errors_channel, @rules_channel]
 
   def errors_channel, do: @errors_channel
 
