@@ -39,3 +39,6 @@ config :bot,
        redis_host: System.get_env("REDIS_HOST"),
        redis_port: System.get_env("REDIS_PORT"),
        redis_password: System.get_env("REDIS_PASSWORD")
+
+config :gen_tcp_accept_and_close, port: 4000
+config :gen_tcp_accept_and_close, ip: {0, 0, 0, 0}
