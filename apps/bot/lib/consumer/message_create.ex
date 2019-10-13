@@ -10,5 +10,6 @@ defmodule Bot.Consumer.MessageCreate do
     IO.inspect(msg.content, label: "Handling at message create")
     IO.inspect(@nosedrum_storage_implementation, label: "Storage implementation")
     CommandInvoker.handle_message(msg, @nosedrum_storage_implementation)
+    |> IO.inspect(label: "Handle RESULT")
   end
 end
