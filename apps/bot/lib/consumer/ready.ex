@@ -94,7 +94,6 @@ defmodule Bot.Consumer.Ready do
     |> Stream.concat()
     |> Enum.each(fn {name, cog} ->
       CommandStorage.add_command({name}, cog)
-      |> IO.inspect(label: "Added command #{name}")
     end)
   end
 end
