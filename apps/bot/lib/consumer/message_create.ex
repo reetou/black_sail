@@ -11,5 +11,8 @@ defmodule Bot.Consumer.MessageCreate do
     IO.inspect(@nosedrum_storage_implementation, label: "Storage implementation")
     CommandInvoker.handle_message(msg, @nosedrum_storage_implementation)
     |> IO.inspect(label: "Handle RESULT")
+    raw_command = "!" <> msg.content
+    :ets.lookup(:nosedrum_commands, raw_command)
+    |> IO.inspect("Result at lookup for command #{raw_command} by hand")
   end
 end

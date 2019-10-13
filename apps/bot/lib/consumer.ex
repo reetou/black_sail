@@ -40,9 +40,6 @@ defmodule Bot.Consumer do
     %Bot.VoiceMembers{ channel_id: channel_id, user_id: user_id, guild_id: guild_id }
     |> VoiceStateUpdate.handle
   end
-  def handle_event({ event, _data }) do
-    IO.inspect(event, label: "Got unhandled event")
-  end
   def handle_event(_other) do
   end
 
