@@ -41,7 +41,6 @@ defmodule Bot.Helpers do
         Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: [])
         |> IO.inspect(label: "Created channel")
       result -> result
-      |> IO.inspect(label: "Result at create channel if not exists")
     end
   end
 
@@ -69,7 +68,6 @@ defmodule Bot.Helpers do
   def reply_and_delete_message(channel_id, text) do
     Task.start(fn ->
       reply = Api.create_message!(channel_id, text)
-              |> IO.inspect(label: "Reply")
       Process.sleep(5000)
       Api.delete_message!(reply.channel_id, reply.id)
     end)

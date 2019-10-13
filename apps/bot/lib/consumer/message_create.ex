@@ -6,8 +6,8 @@ defmodule Bot.Consumer.MessageCreate do
   alias Nosedrum.Invoker.Split, as: CommandInvoker
   alias Nostrum.Struct.Message
 
-  @spec handle(Message.t()) :: :ok | nil
   def handle(msg) do
+    IO.inspect(msg.content, label: "Handling at message create")
     CommandInvoker.handle_message(msg, @nosedrum_storage_implementation)
   end
 end

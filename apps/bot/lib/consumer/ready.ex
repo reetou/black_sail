@@ -73,14 +73,16 @@ defmodule Bot.Consumer.Ready do
             :connect,
           ]),
         ]
+        IO.puts("Modifying roles for guild #{guild_id}")
         Api.modify_guild_role(guild_id, role.id, opts)
       end)
       Task.start(fn ->
+        IO.puts("Recreate channels for commands for guild #{guild_id}")
         Party.recreate_channel(guild_id)
         Register.recreate_channel(guild_id)
         Helpers.ensure_rules_message_exists(guild_id)
       end)
-#      Task.start(fn -> Register.recreate_roles(guild_id) end)
+      IO.puts("Recreating roles for guild #{guild_id}")
       Register.recreate_roles(guild_id)
       Task.start(fn -> Helpers.delete_game_channels_without_parent(guild_id) end)
     end)
