@@ -13,6 +13,6 @@ defmodule Bot.Consumer.MessageCreate do
     |> IO.inspect(label: "Handle RESULT")
     raw_command = "!" <> msg.content
     :ets.lookup(:nosedrum_commands, raw_command)
-    |> IO.inspect("Result at lookup for command #{raw_command} by hand")
+    |> IO.inspect(label: "Result at lookup for command #{raw_command} by hand")
   end
 end
