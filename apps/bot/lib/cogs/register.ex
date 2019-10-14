@@ -110,14 +110,14 @@ defmodule Bot.Cogs.Register do
 
   def assign_role_for_win_rate(win_rate, guild_id, user_id) when guild_id != nil and user_id != nil do
     with {role_name, _} <- win_rate_role_name(win_rate),
-         {:ok, %{ id: role_id }} = Converters.to_role(role_name, guild_id) do
+         {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
       {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
     end
   end
 
   def assign_role_for_kdr(kdr, guild_id, user_id) when guild_id != nil and user_id != nil do
     with {role_name, _} <- kdr_role_name(kdr),
-         {:ok, %{ id: role_id }} = Converters.to_role(role_name, guild_id) do
+         {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
       {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
     end
   end

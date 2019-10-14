@@ -23,16 +23,19 @@ defmodule Bot.Consumer.Ready do
     "register" => Cogs.Register,
     "update" => Cogs.Update,
     "room" => Cogs.Room,
+    "add" => Cogs.Add,
     ## Role configuration
     "rooms" => %{
       ## Удалить пустые личные комнаты
-      "purge" => Cogs.Room.Purge,
+      "purge" => Cogs.Rooms.Purge,
     },
   }
 
   @aliases %{
     "h" => Map.fetch!(@commands, "help"),
     "h" => Map.fetch!(@commands, "help"),
+
+    "фвв" => Map.fetch!(@commands, "add"),
 
     "рум" => Map.fetch!(@commands, "room"),
     "кщщь" => Map.fetch!(@commands, "room"),

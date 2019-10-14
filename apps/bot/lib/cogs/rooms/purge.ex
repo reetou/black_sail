@@ -1,4 +1,4 @@
-defmodule Bot.Cogs.Room.Purge do
+defmodule Bot.Cogs.Rooms.Purge do
 
   alias Bot.Cogs.Room
   alias Bot.{

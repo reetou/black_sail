@@ -67,11 +67,12 @@ defmodule Bot.Cogs.Room do
 
   def command, do: @command
   def channel_name, do: @channel_name
+  def category_name, do: @category_name
 
   @impl true
   def command(%Message{ guild_id: guild_id, channel_id: channel_id, author: %{ username: username, discriminator: discriminator } } = msg, args) do
     with {:ok, channels} <- Api.get_guild_channels(guild_id),
-         {:ok, %{ id: everyone_role_id }} = Converters.to_role("@everyone", guild_id) do
+         {:ok, %{ id: everyone_role_id }} <- Converters.to_role("@everyone", guild_id) do
       overwrites = [
         %{
           id: everyone_role_id,
@@ -95,11 +96,12 @@ defmodule Bot.Cogs.Room do
             parent_id: parent_id,
           ]
         )
-        Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, йоу, комната создана, делаю инвайт...", 5000)
+        create_invite_task = Task.async(fn -> Api.create_channel_invite!(created_channel.id, max_age: 3600) end)
         Task.start(fn ->
           delete_old_user_channels(guild_id, msg.author.id, [created_channel.id])
         end)
-        invite = Api.create_channel_invite!(created_channel.id, max_age: 3600)
+        Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, йоу, комната создана, делаю инвайт...", 5000)
+        invite = Task.await(create_invite_task)
         Helpers.reply_and_delete_message(msg.channel_id, success_message(invite, msg), 15000)
     else
       err ->
@@ -108,7 +110,7 @@ defmodule Bot.Cogs.Room do
     end
   end
 
-  defp get_members_overwrites_from_args(guild_id, args) do
+  def get_members_overwrites_from_args(guild_id, args) do
     args
     |> Enum.map(fn possible_user_mention ->
       with {:ok, member} <- Converters.to_member(possible_user_mention, guild_id) do
@@ -124,7 +126,7 @@ defmodule Bot.Cogs.Room do
     |> Enum.filter(fn o -> o != nil end)
   end
 
-  defp get_roles_overwrites_from_args(guild_id, args) do
+  def get_roles_overwrites_from_args(guild_id, args) do
     args
     |> Enum.map(fn possible_role_mention ->
       with {:ok, role} <- Converters.to_role(possible_role_mention, guild_id) do
@@ -235,5 +237,19 @@ defmodule Bot.Cogs.Room do
   def remove_personal_channels do
     GuildCache.all
     |> Enum.map(fn %{id: id, channels: channels} -> remove_guild_personal_channels(id, channels) end)
+  end
+
+  def get_personal_channel(guild_id, username_with_discriminator) do
+    IO.puts("Looking for #{username_with_discriminator}\'s personal channel")
+    case Nostrum.Cache.GuildCache.get(guild_id) do
+      {:ok, %{ channels: channels }} ->
+        channels
+        |> Enum.map(fn t -> elem(t, 1) end)
+        |> Enum.find(fn %{ name: name } -> name == channel_name_for_user(username_with_discriminator) end)
+      {:error, reason} ->
+        reason
+        |> IO.inspect(label: "Cannot get guild from cache")
+        nil
+    end
   end
 end
