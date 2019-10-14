@@ -38,9 +38,6 @@ defmodule Bot.Cogs.Help do
       |> put_field("!#{command}", module.description)
     end)
     |> put_color(0x9768d1)
-    Task.start(fn ->
-      Api.delete_message(msg.channel_id, msg.id)
-    end)
     Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, отправил список команд с описанием в личку")
     {:ok, dm_channel} = Api.create_dm(msg.author.id)
     {:ok, _message} = Api.create_message(dm_channel.id, content: "Привет, ты просил помочь тебе с командами. Вот они:", embed: embed)

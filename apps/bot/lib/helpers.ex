@@ -33,6 +33,8 @@ defmodule Bot.Helpers do
 
   def commands_channel, do: @commands_channel
 
+  def voice_channel_type, do: 2
+
   def restricted_roles do
     [
       {
@@ -81,10 +83,10 @@ defmodule Bot.Helpers do
     end
   end
 
-  def reply_and_delete_message(channel_id, text) do
+  def reply_and_delete_message(channel_id, text, delete_after \\ 5000) do
     Task.start(fn ->
       reply = Api.create_message!(channel_id, text)
-      Process.sleep(5000)
+      Process.sleep(delete_after)
       Api.delete_message!(reply.channel_id, reply.id)
     end)
   end

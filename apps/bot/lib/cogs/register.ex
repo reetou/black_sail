@@ -156,7 +156,6 @@ defmodule Bot.Cogs.Register do
             Api.delete_message(channel_id, reply.id)
           end)
         end
-        Api.delete_message(channel_id, msg_id)
       {:error, %{ response: error_message }} ->
         error_message
         |> IO.inspect(label: "Unable to create or find channel #{@stats_channel}.")

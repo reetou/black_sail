@@ -62,7 +62,6 @@ defmodule Bot.Cogs.Update do
         reply = Api.create_message!(channel_id, "Обновляю данные...")
         Bot.FaceIT.update_user(user_id, channel_id, guild_id)
         Api.delete_message(channel_id, reply.id)
-        Api.delete_message(channel_id, msg_id)
       {:error, %{ response: error_message }} ->
         error_message
         |> IO.inspect(label: "Unable to create or find channel #{@stats_channel}.")

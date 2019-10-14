@@ -22,11 +22,16 @@ defmodule Bot.Consumer.Ready do
     "party" => Cogs.Party,
     "register" => Cogs.Register,
     "update" => Cogs.Update,
+    "room" => Cogs.Room,
   }
 
   @aliases %{
-    "рудз" => Map.fetch!(@commands, "help"),
     "h" => Map.fetch!(@commands, "help"),
+    "h" => Map.fetch!(@commands, "help"),
+
+    "рум" => Map.fetch!(@commands, "room"),
+    "кщщь" => Map.fetch!(@commands, "room"),
+    "ROOM" => Map.fetch!(@commands, "room"),
 
     "зфкен" => Map.fetch!(@commands, "party"),
     # Английская эр
@@ -36,7 +41,6 @@ defmodule Bot.Consumer.Ready do
     "пати" => Map.fetch!(@commands, "party"),
     "поиск" => Map.fetch!(@commands, "party"),
 
-    "r" => Map.fetch!(@commands, "register"),
     "reg" => Map.fetch!(@commands, "register"),
     "купшыеук" => Map.fetch!(@commands, "register"),
     "куп" => Map.fetch!(@commands, "register"),
@@ -97,6 +101,11 @@ defmodule Bot.Consumer.Ready do
           },
         ]
         Helpers.create_channel_if_not_exists(Helpers.logs_channel, guild_id, 0, overwrites)
+      end)
+
+      Task.start(fn ->
+        IO.puts("Recreating commands channel if not exists")
+        Helpers.create_channel_if_not_exists(Helpers.commands_channel, guild_id, 0)
       end)
 
       Task.start(fn ->

@@ -80,8 +80,8 @@ defmodule Bot.Cogs.Party do
 
   @impl true
   def command(%{ guild_id: guild_id } = msg, _args) do
-    usernameWithDiscriminator = msg.author.username <> "#" <> msg.author.discriminator
-    channel_name_for_member = get_channel_name_for_member(usernameWithDiscriminator)
+    username_with_discriminator = msg.author.username <> "#" <> msg.author.discriminator
+    channel_name_for_member = get_channel_name_for_member(username_with_discriminator)
     case Helpers.create_channel_if_not_exists(@search_channel, guild_id) do
       {:ok, %{ id: channel_id }} ->
         unless msg.channel_id !== channel_id do
@@ -89,13 +89,10 @@ defmodule Bot.Cogs.Party do
             Task.start(fn ->
               delete_empty_voice_channels_with_same_name(channel_name_for_member, guild_id)
             end)
-            %Channel{} = channel = create_voice_channel_for_member(guild_id, usernameWithDiscriminator)
+            %Channel{} = channel = create_voice_channel_for_member(guild_id, username_with_discriminator)
             invite = Api.create_channel_invite!(channel.id, max_age: 1200)
             Task.start(fn ->
               Api.create_message(channel_id, content: "<@#{msg.author.id}>", embed: message_if_not_in_voice_channel(msg.author.id, invite))
-            end)
-            Task.start(fn ->
-              Api.delete_message(channel_id, msg.id)
             end)
           else
             voice_channel_id = Bot.VoiceMembers.get_channel_id_by_user_id(msg.author.id)
@@ -111,18 +108,12 @@ defmodule Bot.Cogs.Party do
                 text_channel_id: channel_id,
                 comment: extract_comment(msg.content)
               })
-              Api.delete_message!(channel_id, msg.id)
             else
               Task.start(fn ->
                 Api.create_message!(channel_id, "<@#{msg.author.id}>, пожалуйста, перейдите в свободный голосовой канал или введите команду заново")
               end)
-              Task.start(fn ->
-                Api.delete_message!(channel_id, msg.id)
-              end)
             end
           end
-        else
-          Api.delete_message(msg.channel_id, msg.id)
         end
       {:error, %{ response: error_message }} ->
         error_message
