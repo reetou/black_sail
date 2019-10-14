@@ -9,6 +9,7 @@ defmodule Bot.Consumer do
     MessageCreate,
     Ready,
     VoiceStateUpdate,
+    GuildMemberAdd,
   }
   import Nostrum.Api
 
@@ -40,6 +41,12 @@ defmodule Bot.Consumer do
     %Bot.VoiceMembers{ channel_id: channel_id, user_id: user_id, guild_id: guild_id }
     |> VoiceStateUpdate.handle
   end
+
+  @impl true
+  def handle_event({:GUILD_MEMBER_ADD, %{ guild_id: guild_id, new_member: new_member } = data, _ws_state}) when guild_id != nil and is_map(new_member) do
+    GuildMemberAdd.handle(data)
+  end
+
   def handle_event(_other) do
   end
 

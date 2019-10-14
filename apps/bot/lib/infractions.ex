@@ -21,8 +21,8 @@ defmodule Bot.Infractions do
   @infractions_prefix "infractions"
   @applied_infractions_prefix "#{@infractions_prefix}:applied"
 
-  @role_infraction 0
-  @channel_permission_infraction 1
+  @role_infraction "role_infr"
+  @channel_permission_infraction "chperm_infr"
 
   def role_infraction, do: @role_infraction
   def infractions_prefix, do: @infractions_prefix
@@ -37,19 +37,53 @@ defmodule Bot.Infractions do
   def apply(%{ clear_at: clear_at }) when clear_at == nil, do: {:error, "Clear_at timestamp provided"}
 
   def apply(%__MODULE__{ user_id: user_id, guild_id: guild_id, type: type, role_id: role_id, reason: reason } = data) when type == @role_infraction do
-    {:ok, _} = Redix.command(:redix, ["HSET", @applied_infractions_prefix, "g" <> "#{guild_id}_#{user_id}", Jason.encode!(data)])
+    {:ok, _} = Redix.command(:redix, ["HSET", @applied_infractions_prefix, "#{@role_infraction}" <> "#{guild_id}_#{user_id}", Jason.encode!(data)])
     {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id, reason)
+  end
+
+  def is_infraction?(str) do
+    with {:ok, decoded} when is_map(decoded) <- Jason.decode(str),
+         %{ "clear_at" => _clear_at } <- decoded do
+      true
+    else
+      _err -> false
+    end
+  end
+
+  def reapply_active_infractions_for_user(user_id, guild_id) when guild_id != nil and user_id != nil do
+    {:ok, infractions} = Redix.command(:redix, ["HGETALL", @applied_infractions_prefix])
+    infractions
+    |> Enum.filter(fn possible_i -> is_infraction?(possible_i) end)
+    |> Enum.each(fn i ->
+      %{
+        "guild_id" => guild_id,
+        "user_id" => user_id,
+        "role_id" => role_id,
+        "clear_at" => clear_at,
+        "type" => type,
+        "reason" => reason,
+        "punisher" => punisher,
+      } = Jason.decode!(i)
+      unless infraction_expired?(clear_at) do
+        %__MODULE__{
+          guild_id: guild_id,
+          user_id: user_id,
+          role_id: role_id,
+          clear_at: clear_at,
+          type: type,
+          reason: reason,
+          punisher: punisher,
+        }
+        |> IO.inspect(label: "Infraction still active for a newcomer, applying it")
+        |> apply
+      end
+    end)
   end
 
   def clear_expired_infractions do
     {:ok, infractions} = Redix.command(:redix, ["HGETALL", @applied_infractions_prefix])
     infractions
-    |> Enum.filter(fn possible_i ->
-      case possible_i do
-        "g" <> guild_and_user_ids -> false
-        _ -> true
-      end
-    end)
+    |> Enum.filter(fn possible_i -> is_infraction?(possible_i) end)
     |> Enum.each(fn i ->
       %{ "clear_at" => clear_at } = infraction = Jason.decode!(i)
       if infraction_expired?(clear_at) do
@@ -80,13 +114,13 @@ defmodule Bot.Infractions do
          {:ok, role} <- Converters.to_role("<@&#{role_id}>", guild_id) do
       IO.puts("Removing role")
       {:ok} = Api.remove_guild_member_role(guild_id, user_id, role_id, reason)
-      {:ok, 1} = Redix.command(:redix, ["HDEL", @applied_infractions_prefix, "g" <> "#{guild_id_string}_#{user_id}"])
+      {:ok, 1} = Redix.command(:redix, ["HDEL", @applied_infractions_prefix, "#{@role_infraction}" <> "#{guild_id_string}_#{user_id}"])
       Task.start(fn ->
         {:ok, _message} = send_to_log("Наказание <@&#{role.id}> было снято с <@#{user_id}>", guild_id)
       end)
       Task.start(fn ->
         {:ok, dm_channel} = Api.create_dm(user_id)
-        {:ok, _message} = Api.create_message(dm_channel.id, "```Ура! Наказание **#{role.name}** на сервере #{guild.name} было снято.```")
+        {:ok, _message} = Api.create_message(dm_channel.id, "```Ура! Наказание #{role.name} на сервере #{guild.name} было снято.```")
       end)
     else
       err -> IO.inspect(err, label: "Cannot clear infraction for guild #{guild_id}")
