@@ -174,7 +174,7 @@ defmodule Bot.Cogs.Room do
 
   def remove_guild_personal_channels(guild_id, channels) do
     Task.start(fn ->
-      Bot.Infractions.send_to_log("Очищаю каналы в категории **#{@category_name}**...", guild_id)
+      Bot.Infractions.send_to_log("Очищаю пустые каналы в категории **#{@category_name}**...", guild_id)
     end)
     channels
     |> Enum.map(fn {id, %{name: name}} -> name end)
@@ -185,25 +185,47 @@ defmodule Bot.Cogs.Room do
              |> Enum.find(fn %{name: name} -> name == @category_name end)
     case parent do
       %Channel{} ->
-        channels
-        |> Enum.map(fn t -> elem(t, 1) end)
-        |> Enum.filter(fn ch -> ch.parent_id == parent.id end)
-        |> Enum.filter(fn ch -> VoiceMembers.is_voice_channel_empty?(ch.id, guild_id) end)
-        |> Enum.each(
-             fn ch ->
-               Task.start(
-                 fn ->
-                   case Api.delete_channel(ch.id, "Deleting empty duplicate") do
-                     {:ok, _} ->
-                       nil
-                     res ->
-                       res
-                       |> IO.inspect(label: "Result")
-                   end
+        deleted_channels =
+          channels
+          |> Enum.map(fn t -> elem(t, 1) end)
+          |> Enum.filter(fn ch -> ch.parent_id == parent.id end)
+          |> Enum.filter(fn ch -> VoiceMembers.is_voice_channel_empty?(ch.id, guild_id) end)
+          |> Enum.map(
+               fn ch ->
+                 case Api.delete_channel(ch.id, "Deleting empty duplicate") do
+                   {:ok, _} -> ch.name
+                   res -> res
+                          |> IO.inspect(label: "Result")
+                          nil
                  end
-               )
-             end
-           )
+               end
+             )
+          |> Enum.filter(fn ch -> ch !== nil end)
+          |> IO.inspect(label: "Deleted channels")
+        unless length(deleted_channels) == 0 do
+          Task.start(
+            fn ->
+              deleted_channels_names = Enum.reduce(
+                deleted_channels,
+                "\n",
+                fn name, acc -> acc <> "\n" <> name end
+              )
+              Bot.Infractions.send_to_log(
+                """
+                Удалены пустые каналы в категории **#{@category_name}**:
+                ```
+                #{deleted_channels_names}
+                ```
+                """,
+                guild_id
+              )
+            end
+          )
+        else
+          Task.start(fn ->
+            Bot.Infractions.send_to_log("В категории **#{@category_name}** нет пустых каналов. Ничего не удалено.", guild_id)
+          end)
+        end
       result ->
         result
         |> IO.inspect(label: "Cannot find parent")
