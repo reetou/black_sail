@@ -34,8 +34,13 @@ defmodule Bot.Cogs.Help do
   @impl true
   def command(msg, _args) do
     embed = Enum.reduce(Ready.commands, %Embed{}, fn { command, module }, acc ->
-      acc
-      |> put_field("!#{command}", module.description)
+      case module do
+        # Субкоманды недоступны в обычном help
+        x when is_map(x) -> acc
+        _ ->
+          acc
+          |> put_field("!#{command}", module.description)
+      end
     end)
     |> put_color(0x9768d1)
     Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, отправил список команд с описанием в личку")
