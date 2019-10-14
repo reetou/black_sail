@@ -85,7 +85,7 @@ defmodule Bot.Cogs.Party do
     case Helpers.create_channel_if_not_exists(@search_channel, guild_id) do
       {:ok, %{ id: channel_id }} ->
         unless msg.channel_id !== channel_id do
-          unless is_in_voice_channel?(msg.author.id) do
+          unless Helpers.is_in_voice_channel?(msg.author.id) do
             Task.start(fn ->
               delete_empty_voice_channels_with_same_name(channel_name_for_member, guild_id)
             end)
@@ -161,13 +161,6 @@ defmodule Bot.Cogs.Party do
 
   defp get_member_description(user_id) do
     "<@#{user_id}>: Player"
-  end
-
-  defp is_in_voice_channel?(user_id) do
-    case Bot.VoiceMembers.get_channel_members_by_user_id(user_id) do
-      x when is_list(x) and length(x) > 0 -> true
-      _ -> false
-    end
   end
 
   defp create_voice_channel_for_member(guild_id, username) do

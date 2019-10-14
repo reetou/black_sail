@@ -91,6 +91,13 @@ defmodule Bot.Helpers do
     end)
   end
 
+  def is_in_voice_channel?(user_id) do
+    case Bot.VoiceMembers.get_channel_members_by_user_id(user_id) do
+      x when is_list(x) and length(x) > 0 -> true
+      _ -> false
+    end
+  end
+
   def delete_casual_message_from_special_channel(%{ guild_id: guild_id, channel_id: channel_id } = msg) when guild_id != nil do
     with {:ok, %{ name: name }} when name in @special_channels <- Converters.to_channel("#{channel_id}", guild_id) do
       Api.delete_message(channel_id, msg.id)
