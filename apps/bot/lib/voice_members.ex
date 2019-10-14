@@ -67,8 +67,7 @@ defmodule Bot.VoiceMembers do
   end
 
   def is_voice_channel_empty?(channel_id, guild_id) do
-    me = Nostrum.Cache.Me.get()
-    case get_channel_members_by_user_id(me.id) do
+    case get_channel_members(%Bot.VoiceMembers{ channel_id: channel_id, guild_id: guild_id }) do
       x when is_list(x) and length(x) > 0 -> false
       _ -> true
     end
