@@ -19,6 +19,13 @@ defmodule Bot.Predicates do
     check_expected_channel(msg, Register.stats_channel)
   end
 
+  def is_commands_channel?(msg) do
+    check_expected_channel(msg, Helpers.commands_channel)
+  end
+
+  def guild_only(%Message{guild_id: nil}), do: {:error, "Эту команду можно использовать только на сервере"}
+  def guild_only(_), do: :passthrough
+
   defp check_expected_channel(%{ channel_id: channel_id, guild_id: guild_id, id: msg_id } = msg, expected_channel) do
     case Converters.to_channel("#{channel_id}", guild_id) do
       {:ok, %{ name: name }} when name == expected_channel -> {:ok, msg}

@@ -15,6 +15,7 @@ defmodule Bot.Helpers do
   @rules_channel "правила"
   @game_channel_prefix "Канал пати"
   @rules_title "Правила очень простые:"
+  @commands_channel "команды"
   @rules_text """
 1. Не быть мудаком
 2. Не оскорблять других людей и их родителей
@@ -29,6 +30,8 @@ defmodule Bot.Helpers do
   def logs_channel, do: @logs_channel
 
   def game_channel_prefix, do: @game_channel_prefix
+
+  def commands_channel, do: @commands_channel
 
   def restricted_roles do
     [

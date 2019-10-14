@@ -60,7 +60,7 @@ defmodule Bot.Cogs.Party do
       """
 
   @impl true
-  def predicates, do: [&Predicates.guild_only/1, &CustomPredicates.is_party_search_channel?/1]
+  def predicates, do: [&CustomPredicates.guild_only/1, &CustomPredicates.is_party_search_channel?/1]
 
   def command, do: @command
   def search_channel, do: @search_channel

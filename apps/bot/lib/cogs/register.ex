@@ -55,7 +55,7 @@ defmodule Bot.Cogs.Register do
       """
 
   @impl true
-  def predicates, do: [&Predicates.guild_only/1, &CustomPredicates.is_stats_channel?/1]
+  def predicates, do: [&CustomPredicates.guild_only/1, &CustomPredicates.is_stats_channel?/1]
 
   def command, do: @command
   def stats_channel, do: @stats_channel
