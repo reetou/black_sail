@@ -80,7 +80,6 @@ defmodule Bot.Cogs.Party do
 
   @impl true
   def command(%{ guild_id: guild_id } = msg, _args) do
-    IO.inspect(msg, label: "Executing command #{msg.content}")
     usernameWithDiscriminator = msg.author.username <> "#" <> msg.author.discriminator
     channel_name_for_member = get_channel_name_for_member(usernameWithDiscriminator)
     case Helpers.create_channel_if_not_exists(@search_channel, guild_id) do

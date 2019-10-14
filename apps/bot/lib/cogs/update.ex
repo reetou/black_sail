@@ -56,7 +56,6 @@ defmodule Bot.Cogs.Update do
 
   @impl true
   def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, _args) do
-    IO.inspect(msg, label: "Executing command #{msg.content}")
     msg_channel_id = msg.channel_id
     case Helpers.create_channel_if_not_exists(@stats_channel, guild_id) do
       {:ok, %{ id: channel_id }} when channel_id == msg_channel_id ->

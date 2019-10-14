@@ -30,16 +30,28 @@ defmodule Bot.Helpers do
 
   def game_channel_prefix, do: @game_channel_prefix
 
+  def restricted_roles do
+    [
+      {
+        Bot.Infractions.Hopper.role_name,
+        %{
+          type: "role",
+          deny: Permission.to_bitset([:connect, :speak])
+        }
+      }
+    ]
+  end
+
   def special_channel_permission_overwrites(role_id) do
     [
       %{ id: role_id, type: "role", deny: Permission.to_bitset([:attach_files, :embed_links, :send_tts_messages, :mention_everyone]) },
     ]
   end
 
-  def create_channel_if_not_exists(channel_name, guild_id, type \\ 0) do
+  def create_channel_if_not_exists(channel_name, guild_id, type \\ 0, permission_overwrites \\ []) do
     case Converters.to_channel(channel_name, guild_id) do
       {:error, _} ->
-        Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: [])
+        Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: permission_overwrites)
         |> IO.inspect(label: "Created channel")
       result -> result
     end
@@ -119,4 +131,21 @@ defmodule Bot.Helpers do
     end
   end
 
+  def apply_permissions_for_infraction_roles(channels, guild_id) do
+    restricted_roles
+    |> Enum.each(fn { role_name, permission_info } ->
+      with {:ok, role} <- Converters.to_role(role_name, guild_id) do
+        channels
+        |> Enum.filter(fn %{ name: name } -> name not in @special_channels end)
+        |> Enum.each(fn %{ id: id, name: name } ->
+          case Api.edit_channel_permissions(id, role.id, permission_info) do
+            {:ok} -> IO.inspect(permission_info, label: "Successfully edited permissions for role #{role_name} in channel #{name}")
+            err -> err |> IO.inspect(label: "Cannot edit channel permissions: #{id} #{name}")
+          end
+        end)
+      else
+        err -> err |> IO.inspect(label: "Cannot edit permissions for role #{role_name}")
+      end
+    end)
+  end
 end

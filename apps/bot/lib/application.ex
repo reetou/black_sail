@@ -8,8 +8,9 @@ defmodule Bot.Application do
 
   @impl true
   def start(_type, _args) do
-#    import Supervisor.Spec, warn: false
+    import Supervisor.Spec, warn: false
     children = [
+      Bot.Scheduler,
 #      worker(Bot.Periodic, []),
       {Redix,
         host: Application.fetch_env!(:bot, :redis_host),

@@ -30,6 +30,14 @@ config :nostrum,
 config :nosedrum,
        prefix: "!"
 
+
+config :bot, Bot.Scheduler,
+       jobs: [
+         # Every minute
+         {"* * * * *",   fn -> Bot.Infractions.clear_expired_infractions end},
+       ]
+
+
 config :mnesia, dir: '.mnesia/#{Mix.env}/#{node()}'
 
 config :phoenix, :json_library, Jason

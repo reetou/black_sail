@@ -17,6 +17,12 @@ import Config
 #       metadata: [:user_id]
 #
 
+config :bot, Bot.Scheduler,
+       jobs: [
+         # Every minute
+         {"* * * * *",   fn -> Bot.Infractions.clear_expired_infractions end},
+       ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
