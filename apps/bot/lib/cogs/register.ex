@@ -123,16 +123,15 @@ defmodule Bot.Cogs.Register do
   end
 
   def recreate_channel(guild_id) do
+    task = Task.async(fn -> Converters.to_role("@everyone", guild_id) end)
     Helpers.delete_channel_if_exists(@stats_channel, guild_id)
-    Task.start(fn ->
-      {:ok, role} = Converters.to_role("@everyone", guild_id)
-      opts = [
-        name: @stats_channel,
-        type: 0,
-        permission_overwrites: Helpers.special_channel_permission_overwrites(role.id)
-      ]
-      Api.create_guild_channel!(guild_id, opts)
-    end)
+    {:ok, role} = Task.await(task)
+    opts = [
+      name: @stats_channel,
+      type: 0,
+      permission_overwrites: Helpers.special_channel_permission_overwrites(role.id)
+    ]
+    Api.create_guild_channel(guild_id, opts)
   end
 
   @impl true

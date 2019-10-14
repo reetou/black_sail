@@ -161,4 +161,8 @@ defmodule Bot.Helpers do
       end
     end)
   end
+
+  def set_channel_rate_limit_per_user(channel_id, rate_limit_seconds \\ 60) do
+    Api.request("PATCH", "/channels/#{channel_id}", %{ rate_limit_per_user: rate_limit_seconds })
+  end
 end

@@ -120,15 +120,31 @@ defmodule Bot.Consumer.Ready do
 
       Task.start(fn ->
         IO.puts("Recreating commands channel if not exists")
-        Helpers.create_channel_if_not_exists(Helpers.commands_channel, guild_id, 0)
+        with {:ok, %{ id: channel_id }} <- Helpers.create_channel_if_not_exists(Helpers.commands_channel, guild_id, 0) do
+          Helpers.set_channel_rate_limit_per_user(channel_id, 10)
+        else
+          err -> err |> IO.inspect(label: "Cannot recreate channel for COMMANDS")
+        end
       end)
 
       Task.start(fn ->
         IO.puts("Recreate channel for party command in guild #{guild_id}")
-        Party.recreate_channel(guild_id)
+        with {:ok, %{ id: channel_id }} <- Party.recreate_channel(guild_id) do
+          Task.start(fn ->
+            Helpers.set_channel_rate_limit_per_user(channel_id)
+          end)
+        else
+          err -> err |> IO.inspect(label: "Cannot recreate channel FOR PARTY")
+        end
 
         IO.puts("Recreate channel for register command in guild #{guild_id}")
-        Register.recreate_channel(guild_id)
+        with {:ok, %{ id: channel_id }} <- Register.recreate_channel(guild_id) do
+          Task.start(fn ->
+            Helpers.set_channel_rate_limit_per_user(channel_id, 30)
+          end)
+        else
+          err -> err |> IO.inspect(label: "Cannot recreate channel FOR REGISTER")
+        end
 
         IO.puts("Recreating rules channel in guild #{guild_id}")
         Helpers.ensure_rules_message_exists(guild_id)
