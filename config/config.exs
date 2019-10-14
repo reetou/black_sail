@@ -20,7 +20,7 @@ import Config
 config :bot, Bot.Scheduler,
        jobs: [
          # Every minute
-         {"* * * * *",   fn -> Bot.Infractions.clear_expired_infractions end},
+         {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
        ]
 
 # Import environment specific config. This must remain at the bottom

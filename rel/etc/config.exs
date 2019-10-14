@@ -34,7 +34,7 @@ config :nosedrum,
 config :bot, Bot.Scheduler,
        jobs: [
          # Every minute
-         {"* * * * *",   fn -> Bot.Infractions.clear_expired_infractions end},
+         {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
        ]
 
 
