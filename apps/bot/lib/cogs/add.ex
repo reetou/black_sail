@@ -53,7 +53,7 @@ defmodule Bot.Cogs.Add do
 
   def success_message(%Invite{ channel: %{ name: name }, code: code } = invite, msg) do
     """
-    <@#{msg.author.id}>, твои друзья были успешно внесены в список разрешенных **#{name}**!
+    <@#{msg.author.id}>, твои друзья были успешно внесены в список разрешенных комнаты **#{name}**!
     Перейти: https://discord.gg/#{code}
 
     Комната будет удалена в полночь, если будет пустовать.
