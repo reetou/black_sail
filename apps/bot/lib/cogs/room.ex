@@ -49,7 +49,7 @@ defmodule Bot.Cogs.Room do
 
   def success_message(%Invite{ channel: %{ name: name }, code: code } = invite, msg) do
     """
-<@#{msg.author.id}>, для тебя и твоих друзей была создана комната **#{name}**!
+<@#{msg.author.id}>, для тебя и твоих друзей (если ты их указал) была создана комната **#{name}**!
 Перейти: https://discord.gg/#{code}
 
 Комната будет удалена в полночь, если будет пустовать.
@@ -65,20 +65,8 @@ defmodule Bot.Cogs.Room do
   def channel_name, do: @channel_name
 
   @impl true
-  def command(msg, args) when length(args) == 0 or args == nil do
-    Helpers.reply_and_delete_message(msg.channel_id, """
-<@#{msg.author.id}>, нельзя быть таким эгоистом и создавать комнату лишь для себя.
-
-Примеры использования:
-#{Enum.reduce(usage, "", fn e, acc -> acc <> "\n" <> e end)}
-""")
-  end
-
-  @impl true
   def command(%Message{ guild_id: guild_id, channel_id: channel_id, author: %{ username: username, discriminator: discriminator } } = msg, args) do
-    IO.inspect(args, label: "RECEIVED COMMAND ROOM WITH ARGS")
     with {:ok, channels} <- Api.get_guild_channels(guild_id),
-         {:ok} <- delete_old_user_channels(guild_id, msg.author.id),
          {:ok, %{ id: everyone_role_id }} = Converters.to_role("@everyone", guild_id) do
       overwrites = [
         %{
@@ -103,6 +91,10 @@ defmodule Bot.Cogs.Room do
             parent_id: parent_id,
           ]
         )
+        Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, йоу, комната создана, делаю инвайт...", 5000)
+        Task.start(fn ->
+          delete_old_user_channels(guild_id, msg.author.id, [created_channel.id])
+        end)
         invite = Api.create_channel_invite!(created_channel.id, max_age: 3600)
         Helpers.reply_and_delete_message(msg.channel_id, success_message(invite, msg), 15000)
     else
@@ -144,7 +136,7 @@ defmodule Bot.Cogs.Room do
     |> Enum.filter(fn o -> o != nil end)
   end
 
-  defp delete_old_user_channels(guild_id, user_id) do
+  defp delete_old_user_channels(guild_id, user_id, exceptions \\ []) do
     {
       :ok,
       %Member{
@@ -156,6 +148,7 @@ defmodule Bot.Cogs.Room do
     } = Converters.to_member("<@#{user_id}>", guild_id)
     Api.get_guild_channels!(guild_id)
     |> Enum.filter(fn %{name: name} -> name == channel_name_for_user(username <> "#" <> discriminator) end)
+    |> Enum.filter(fn %{id: id} -> id not in exceptions end)
     |> Enum.each(fn %{id: id} -> Api.delete_channel(id, "Deleting duplicate") end)
     {:ok}
   end
