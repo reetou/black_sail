@@ -7,7 +7,7 @@ defmodule Bot.Infractions.Hopper do
   alias Nosedrum.Converters
 
   @prefix "hoppers"
-  @expire_seconds 90
+  @expire_seconds 15
   @role_name "Войс мут"
   @infraction_length_seconds 600
 
