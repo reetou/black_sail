@@ -35,6 +35,7 @@ config :bot, Bot.Scheduler,
        jobs: [
          # Every minute
          {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
+         {"@daily", {Bot.Cogs.Room, :remove_personal_channels, []}},
        ]
 
 

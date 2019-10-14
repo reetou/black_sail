@@ -1,6 +1,10 @@
 defmodule Bot.Cogs.Room do
 
-  alias Bot.{Helpers, PartySearchParticipants}
+  alias Bot.{
+    Helpers,
+    PartySearchParticipants,
+    VoiceMembers,
+  }
   alias Nosedrum.{
     Predicates,
     Converters,
@@ -166,5 +170,48 @@ defmodule Bot.Cogs.Room do
         IO.inspect(err, label: "Unable to find such channel")
         Api.create_guild_channel!(guild_id, name: @category_name, type: 4)
     end
+  end
+
+  def remove_guild_personal_channels(guild_id, channels) do
+    Task.start(fn ->
+      Bot.Infractions.send_to_log("Очищаю каналы в категории **#{@category_name}**...", guild_id)
+    end)
+    channels
+    |> Enum.map(fn {id, %{name: name}} -> name end)
+    |> IO.inspect(label: "Channels in guild #{guild_id}")
+    parent = channels
+             |> Enum.map(fn t -> elem(t, 1) end)
+             |> Enum.filter(fn %{type: type} -> type == 4 end)
+             |> Enum.find(fn %{name: name} -> name == @category_name end)
+    case parent do
+      %Channel{} ->
+        channels
+        |> Enum.map(fn t -> elem(t, 1) end)
+        |> Enum.filter(fn ch -> ch.parent_id == parent.id end)
+        |> Enum.filter(fn ch -> VoiceMembers.is_voice_channel_empty?(ch.id, guild_id) end)
+        |> Enum.each(
+             fn ch ->
+               Task.start(
+                 fn ->
+                   case Api.delete_channel(ch.id, "Deleting empty duplicate") do
+                     {:ok, _} ->
+                       nil
+                     res ->
+                       res
+                       |> IO.inspect(label: "Result")
+                   end
+                 end
+               )
+             end
+           )
+      result ->
+        result
+        |> IO.inspect(label: "Cannot find parent")
+    end
+  end
+
+  def remove_personal_channels do
+    GuildCache.all
+    |> Enum.map(fn %{id: id, channels: channels} -> remove_guild_personal_channels(id, channels) end)
   end
 end
