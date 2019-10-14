@@ -1,0 +1,80 @@
+defmodule Bot.Cogs.Room.Purge do
+
+  alias Bot.Cogs.Room
+  alias Bot.{
+    Helpers,
+    PartySearchParticipants,
+    VoiceMembers,
+    }
+  alias Nosedrum.{
+    Predicates,
+    Converters,
+    }
+  alias Bot.Predicates, as: CustomPredicates
+  alias Nostrum.Api
+  alias Nostrum.Struct.{
+    Embed,
+    Guild,
+    Channel,
+    Invite,
+    Message,
+    }
+  alias Nostrum.Cache.GuildCache
+  alias Guild.Member
+  alias Nostrum.Permission
+  import Embed
+
+  @moduledoc """
+    Удаляет пустые личные комнаты на сервере
+  """
+  @behaviour Nosedrum.Command
+  @command "rooms purge"
+
+  @impl true
+  def usage,
+      do: [
+        "!#{@command}",
+      ]
+
+  @impl true
+  def description,
+      do: """
+      ```
+      Создает личную комнату на количество человек, упомянутых в команде
+
+      #{Enum.reduce(usage, "Примеры использования:", fn text, acc -> acc <> "\n" <> text end)}
+      ```
+      """
+
+  def success_message(%Invite{ channel: %{ name: name }, code: code } = invite, msg) do
+    """
+    <@#{msg.author.id}>, для тебя и твоих друзей (если ты их указал) была создана комната **#{name}**!
+    Перейти: https://discord.gg/#{code}
+
+    Комната будет удалена в полночь, если будет пустовать.
+
+    Береги ее и люби.
+    """
+  end
+
+  @impl true
+  def predicates, do: [&CustomPredicates.guild_only/1, CustomPredicates.has_permission(:manage_channels)]
+
+  def command, do: @command
+
+  @impl true
+  def command(%Message{ guild_id: guild_id, channel_id: channel_id } = msg, args) do
+    with {:ok, %{ channels: channels }} <- GuildCache.get(guild_id) do
+      Room.remove_guild_personal_channels(guild_id, channels)
+      Helpers.reply_and_delete_message(channel_id, "<@#{msg.author.id}>, команда успешно выполнена", 10000)
+    else
+      err ->
+        err |> IO.inspect(label: "Error at clear rooms")
+        Helpers.reply_and_delete_message(
+          channel_id,
+          "<@#{msg.author.id}>, не удалось очистить пустые личные комнаты, попробуйте позднее или обратитесь к админам",
+          60000
+        )
+    end
+  end
+end

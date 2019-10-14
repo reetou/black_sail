@@ -23,6 +23,11 @@ defmodule Bot.Consumer.Ready do
     "register" => Cogs.Register,
     "update" => Cogs.Update,
     "room" => Cogs.Room,
+    ## Role configuration
+    "rooms" => %{
+      ## Удалить пустые личные комнаты
+      "purge" => Cogs.Room.Purge,
+    },
   }
 
   @aliases %{
