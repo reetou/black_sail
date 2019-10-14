@@ -45,7 +45,7 @@ defmodule Bot.Cogs.Register do
   def description,
       do: """
       ```
-        Вносит ваш никнейм на FaceIT в базу бота
+        Вносит ваш никнейм на FaceIT в базу бота, чтобы вы могли обновлять информацию о вашей статистике на FaceIT!
 
 #{Enum.reduce(usage, "Примеры использования:", fn text, acc -> acc <> "\n" <> text end)}
 
