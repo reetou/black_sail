@@ -24,6 +24,7 @@ defmodule Bot.Consumer.Ready do
     "update" => Cogs.Update,
     "room" => Cogs.Room,
     "add" => Cogs.Add,
+    "remove" => Cogs.Remove,
     ## Role configuration
     "rooms" => %{
       ## Удалить пустые личные комнаты
@@ -36,6 +37,12 @@ defmodule Bot.Consumer.Ready do
     "h" => Map.fetch!(@commands, "help"),
 
     "фвв" => Map.fetch!(@commands, "add"),
+    "ADD" => Map.fetch!(@commands, "add"),
+    "добавить" => Map.fetch!(@commands, "add"),
+    "куьщму" => Map.fetch!(@commands, "remove"),
+    "REMOVE" => Map.fetch!(@commands, "remove"),
+    "delete" => Map.fetch!(@commands, "remove"),
+    "удалить" => Map.fetch!(@commands, "remove"),
 
     "рум" => Map.fetch!(@commands, "room"),
     "кщщь" => Map.fetch!(@commands, "room"),
