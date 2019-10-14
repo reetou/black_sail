@@ -145,6 +145,7 @@ defmodule Bot.Helpers do
         |> Enum.each(fn %{ id: id, name: name } ->
           case Api.edit_channel_permissions(id, role.id, permission_info) do
             {:ok} -> IO.inspect(permission_info, label: "Successfully edited permissions for role #{role_name} in channel #{name}")
+            {:error, %{ status_code: 404 }} -> IO.puts("Cannot edit channel permissions because it is already deleted")
             err -> err |> IO.inspect(label: "Cannot edit channel permissions: #{id} #{name}")
           end
         end)
