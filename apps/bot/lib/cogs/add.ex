@@ -71,7 +71,7 @@ defmodule Bot.Cogs.Add do
   @impl true
   def command(%Message{ guild_id: guild_id, channel_id: reply_channel_id, author: %{ username: username, discriminator: discriminator } } = msg, args) do
     with {:ok, %{ id: everyone_role_id }} <- Converters.to_role("@everyone", guild_id),
-         %Channel{} = personal_channel <- Room.get_personal_channel(guild_id, username <> "#" <> discriminator) do
+         {:ok, %Channel{} = personal_channel} <- Room.get_personal_channel(guild_id, username <> "#" <> discriminator) do
       create_invite_task = Task.async(fn -> Api.create_channel_invite!(personal_channel.id, max_age: 1200) end)
       Room.get_members_overwrites_from_args(guild_id, args) ++ Room.get_roles_overwrites_from_args(guild_id, args)
       |> Enum.each(fn %{id: overwrite_id, type: type, allow: allow} ->
@@ -86,7 +86,10 @@ defmodule Bot.Cogs.Add do
     else
       err ->
         IO.inspect(err, label: "ADD COMMAND: Cannot get channels for guild #{guild_id}")
-        Helpers.reply_and_delete_message(reply_channel_id, "Не получилось отредактировать канал. Обратитесь к админам")
+        case err do
+          {:error, :no_channel} -> Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, личный канал отсутствует, начните с его создания: !#{Room.command}", 15000)
+          _ -> Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, не получилось отредактировать канал. Обратитесь к админам")
+        end
     end
   end
 end

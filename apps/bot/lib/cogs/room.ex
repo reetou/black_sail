@@ -243,13 +243,18 @@ defmodule Bot.Cogs.Room do
     IO.puts("Looking for #{username_with_discriminator}\'s personal channel")
     case Nostrum.Cache.GuildCache.get(guild_id) do
       {:ok, %{ channels: channels }} ->
-        channels
+        channel = channels
         |> Enum.map(fn t -> elem(t, 1) end)
         |> Enum.find(fn %{ name: name } -> name == channel_name_for_user(username_with_discriminator) end)
+        unless channel == nil do
+          {:ok, channel}
+        else
+          {:error, :no_channel}
+        end
       {:error, reason} ->
         reason
         |> IO.inspect(label: "Cannot get guild from cache")
-        nil
+        {:error, reason}
     end
   end
 end
