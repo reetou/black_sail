@@ -22,6 +22,7 @@ defmodule Bot.Invoker.Split do
   alias Nosedrum.{Helpers, Predicates}
   alias Nostrum.Api
   alias Nostrum.Struct.Message
+  alias Bot.Helpers, as: BotHelpers
 
   @doc """
   Handle the given message.
@@ -118,8 +119,8 @@ defmodule Bot.Invoker.Split do
           subcommand_string =
             command_map |> Map.keys() |> Stream.map(&"`#{&1}`") |> Enum.join(", ")
 
-          response = "🚫 unknown subcommand, known subcommands: #{subcommand_string}"
-          Api.create_message!(msg.channel_id, response)
+          response = "🚫 Неизвестная субкоманда, доступные субкоманды: #{subcommand_string}"
+          BotHelpers.reply_and_delete_message(msg.channel_id, response, 15000)
         end
     end
   end
