@@ -85,25 +85,41 @@ defmodule Bot.Cogs.Register do
     |> Enum.each(fn { role_name, _role_data } -> Helpers.create_role_if_not_exists(role_name, guild_id) end)
   end
 
-  def assign_role_for_win_rate(win_rate, guild_id) do
-    {role_name, _} = win_rate_roles
-    |> Enum.find(fn { role_name, role_data } ->
-      {:range, range} = List.keyfind(role_data, :range, 0)
-      {value, _} = Integer.parse(win_rate)
-      value in range
-    end)
-    {:ok, role} = Converters.to_role(role_name, guild_id)
+  def kdr_role_name(kdr) do
+    kdr_roles
+    |> Enum.find(
+         fn {role_name, role_data} ->
+           {:min, min} = List.keyfind(role_data, :min, 0)
+           {:max, max} = List.keyfind(role_data, :max, 0)
+           {value, _} = Float.parse(kdr)
+           value >= min and value <= max
+         end
+       )
   end
 
-  def assign_role_for_kdr(kdr, guild_id) do
-    {role_name, _} = kdr_roles
-    |> Enum.find(fn { role_name, role_data } ->
-      {:min, min} = List.keyfind(role_data, :min, 0)
-      {:max, max} = List.keyfind(role_data, :max, 0)
-      {value, _} = Float.parse(kdr)
-      value >= min and value <= max
-    end)
-    {:ok, role} = Converters.to_role(role_name, guild_id)
+  def win_rate_role_name(win_rate) do
+    win_rate_roles
+    |> Enum.find(
+         fn {role_name, role_data} ->
+           {:range, range} = List.keyfind(role_data, :range, 0)
+           {value, _} = Integer.parse(win_rate)
+           value in range
+         end
+       )
+  end
+
+  def assign_role_for_win_rate(win_rate, guild_id, user_id) when guild_id != nil and user_id != nil do
+    with {role_name, _} <- win_rate_role_name(win_rate),
+         {:ok, %{ id: role_id }} = Converters.to_role(role_name, guild_id) do
+      {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
+    end
+  end
+
+  def assign_role_for_kdr(kdr, guild_id, user_id) when guild_id != nil and user_id != nil do
+    with {role_name, _} <- kdr_role_name(kdr),
+         {:ok, %{ id: role_id }} = Converters.to_role(role_name, guild_id) do
+      {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
+    end
   end
 
   def recreate_channel(guild_id) do
