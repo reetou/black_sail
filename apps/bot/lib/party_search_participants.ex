@@ -4,6 +4,7 @@ defmodule Bot.PartySearchParticipants do
   alias Nostrum.Struct.{
     Embed,
   }
+  require Logger
 
   use Memento.Table,
       attributes: [
@@ -13,6 +14,8 @@ defmodule Bot.PartySearchParticipants do
         :invite_code,
         :text_channel_id,
         :comment,
+        :kdr_role,
+        :override_index,
       ],
       type: :ordered_set
 
@@ -38,6 +41,8 @@ defmodule Bot.PartySearchParticipants do
     invite_code: invite_code,
     guild_id: guild_id,
     comment: comment,
+    kdr_role: kdr_role,
+    override_index: override_index,
   } = data) do
     members = Bot.VoiceMembers.get_channel_members(%Bot.VoiceMembers{
       channel_id: voice_channel_id,
@@ -46,12 +51,13 @@ defmodule Bot.PartySearchParticipants do
     with {:ok, msg} <- Api.get_channel_message(text_channel_id, message_id),
          {:ok, invite} <- Api.get_invite(invite_code),
          msg = Map.put(msg, :guild_id, guild_id),
-         msg = Map.put(msg, :content, "!#{Bot.Cogs.Party.command} #{comment}"),
-         IO.inspect(msg, label: "Message on update party search"),
-         %Embed{} = updated_embed <- Party.create_party_message(msg, invite) do
+         msg = Map.put(msg, :content, "!#{Bot.Cogs.Party.command} #{comment}") do
       unless length(members) == 0 do
+        Logger.debug("Channel not empty, editing...")
+        %Embed{} = updated_embed = Party.create_party_message(msg, invite, kdr_role, override_index)
         Api.edit_message!(msg, embed: updated_embed)
       else
+        Logger.debug("Deleting empty channel because members are empty")
         Api.delete_message(text_channel_id, message_id)
       end
     else err -> err

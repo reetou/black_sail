@@ -55,22 +55,10 @@ defmodule Bot.Cogs.Update do
   def command, do: @command
 
   @impl true
-  def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, _args) do
-    msg_channel_id = msg.channel_id
-    case Helpers.create_channel_if_not_exists(@stats_channel, guild_id) do
-      {:ok, %{ id: channel_id }} when channel_id == msg_channel_id ->
-        reply = Api.create_message!(channel_id, "Обновляю данные...")
-        Bot.FaceIT.update_user(user_id, channel_id, guild_id)
-        Api.delete_message(channel_id, reply.id)
-      {:error, %{ response: error_message }} ->
-        error_message
-        |> IO.inspect(label: "Unable to create or find channel #{@stats_channel}.")
-      {:error, error_message} ->
-        error_message
-        |> IO.inspect(label: "Unable to create or find channel #{@stats_channel}.")
-      _ ->
-        IO.puts("Unknown error when creating or finding channel #{@stats_channel}")
-    end
+  def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id, channel_id: channel_id } = msg, _args) do
+    reply = Api.create_message!(channel_id, "Обновляю данные...")
+    Bot.FaceIT.update_user(user_id, channel_id, guild_id)
+    Api.delete_message(channel_id, reply.id)
   end
 
   def get_nickname_from_message(content) do

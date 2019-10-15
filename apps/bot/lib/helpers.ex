@@ -35,6 +35,21 @@ defmodule Bot.Helpers do
 
   def voice_channel_type, do: 2
 
+  def allow_speak_and_connect(type) when is_atom(type), do: %{
+    type: Atom.to_string(type),
+    allow: Permission.to_bitset([:connect, :speak])
+  }
+
+  def deny_speak_and_connect(type) when is_atom(type), do: %{
+    type: Atom.to_string(type),
+    deny: Permission.to_bitset([:connect, :speak])
+  }
+
+  def allow_manage_voice_channel(type) when is_atom(type), do: %{
+    type: Atom.to_string(type),
+    allow: Permission.to_bitset([:connect, :speak, :mute_members, :deafen_members, :move_members])
+  }
+
   def restricted_roles do
     [
       {
@@ -58,7 +73,7 @@ defmodule Bot.Helpers do
       {:error, _} ->
         Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: permission_overwrites)
         |> IO.inspect(label: "Created channel")
-      result -> result
+      {:ok, %{ id: id }} -> Api.modify_channel(id, permission_overwrites: permission_overwrites, type: type, name: channel_name)
     end
   end
 
@@ -164,5 +179,34 @@ defmodule Bot.Helpers do
 
   def set_channel_rate_limit_per_user(channel_id, rate_limit_seconds \\ 60) do
     Api.request("PATCH", "/channels/#{channel_id}", %{ rate_limit_per_user: rate_limit_seconds })
+  end
+
+  def get_guild_roles_by_id!(roles, guild_id) do
+    roles
+    |> Enum.map(
+         fn r ->
+           with {:ok, role} <- Converters.to_role("<@&#{r}>", guild_id) do
+             role
+           else
+             err -> nil
+           end
+         end
+       )
+    |> Enum.filter(fn x -> x != nil end)
+#    |> IO.inspect(label: "Roles from guild by id")
+  end
+
+  def get_guild_roles_by_name!(roles, guild_id) do
+    roles
+    |> Enum.map(
+         fn r ->
+           with {:ok, role} <- Converters.to_role(r, guild_id) do
+             role
+           else
+             err -> nil
+           end
+         end
+       )
+    |> Enum.filter(fn x -> x != nil end)
   end
 end

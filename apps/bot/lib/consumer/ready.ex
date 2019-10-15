@@ -20,6 +20,7 @@ defmodule Bot.Consumer.Ready do
     ## Bot meta commands
     "help" => Cogs.Help,
     "party" => Cogs.Party,
+    "kdr" => Cogs.KDR,
     "register" => Cogs.Register,
     "update" => Cogs.Update,
     "room" => Cogs.Room,
@@ -55,6 +56,17 @@ defmodule Bot.Consumer.Ready do
     "р" => Map.fetch!(@commands, "party"),
     "пати" => Map.fetch!(@commands, "party"),
     "поиск" => Map.fetch!(@commands, "party"),
+
+    "kdr" => Map.fetch!(@commands, "kdr"),
+    "KDR" => Map.fetch!(@commands, "kdr"),
+    "кдр" => Map.fetch!(@commands, "kdr"),
+    "КДР" => Map.fetch!(@commands, "kdr"),
+    "kda" => Map.fetch!(@commands, "kdr"),
+    "KDA" => Map.fetch!(@commands, "kdr"),
+    "кда" => Map.fetch!(@commands, "kdr"),
+    "КДА" => Map.fetch!(@commands, "kdr"),
+    "кд" => Map.fetch!(@commands, "kdr"),
+    "КД" => Map.fetch!(@commands, "kdr"),
 
     "reg" => Map.fetch!(@commands, "register"),
     "купшыеук" => Map.fetch!(@commands, "register"),

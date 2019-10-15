@@ -6,7 +6,6 @@ defmodule Bot.Cogs.Register do
 
   @stats_channel "статистика"
   @command "register"
-  @low_win_rate_key "Низкий винрейт"
 
   alias Bot.{
     Helpers,
@@ -60,16 +59,14 @@ defmodule Bot.Cogs.Register do
   def command, do: @command
   def stats_channel, do: @stats_channel
   def kdr_roles, do: %{
-    "Низкий KDR" => [min: 0, max: 0.9],
-    "KDR 1" => [min: 1, max: 1.9],
-    "KDR 2" => [min: 2, max: 2.9],
-    "KDR 3" => [min: 3, max: 3.9],
-    "KDR 4" => [min: 4, max: 4.9],
-    "KDR 5" => [min: 5, max: 5.9],
-    "KDR 6" => [min: 6, max: 999],
+    "KDR 1" => [min: 1, max: 1.9, index: 1],
+    "KDR 2" => [min: 2, max: 2.9, index: 2],
+    "KDR 3" => [min: 3, max: 3.9, index: 3],
+    "KDR 4" => [min: 4, max: 4.9, index: 4],
+    "KDR 5" => [min: 5, max: 5.9, index: 5],
+    "KDR 6" => [min: 6, max: 999, index: 6],
   }
   def win_rate_roles, do: %{
-    "#{@low_win_rate_key}" => [range: 0..39],
     "Винрейт 40%" => [range: 40..49 ],
     "Винрейт 50%" => [range: 50..59 ],
     "Винрейт 60%" => [range: 60..69 ],
@@ -123,53 +120,34 @@ defmodule Bot.Cogs.Register do
   end
 
   def recreate_channel(guild_id) do
-    task = Task.async(fn -> Converters.to_role("@everyone", guild_id) end)
-    Helpers.delete_channel_if_exists(@stats_channel, guild_id)
-    {:ok, role} = Task.await(task)
-    opts = [
-      name: @stats_channel,
-      type: 0,
-      permission_overwrites: Helpers.special_channel_permission_overwrites(role.id)
-    ]
-    Api.create_guild_channel(guild_id, opts)
+    {:ok, role} = Converters.to_role("@everyone", guild_id)
+    Helpers.create_channel_if_not_exists(@stats_channel, guild_id, 0, Helpers.special_channel_permission_overwrites(role.id))
   end
 
   @impl true
-  def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id } = msg, args) do
-    IO.inspect(args, label: "ARGS")
-#    IO.inspect(msg, label: "Message")
-    msg_channel_id = msg.channel_id
-    case Helpers.create_channel_if_not_exists(@stats_channel, guild_id) do
-      {:ok, %{ id: channel_id }} when channel_id == msg_channel_id ->
-        nickname = get_nickname_from_message(msg.content)
-        unless nickname == nil do
-          reply = Api.create_message!(channel_id, "Ищу игрока с никнеймом `#{nickname}`...")
-          Task.start(fn ->
-            Bot.FaceIT.register_user(nickname, user_id, channel_id, guild_id)
-            Api.delete_message(channel_id, reply.id)
-          end)
-        else
-          Task.start(fn ->
-            reply = Api.create_message!(channel_id, "<@#{msg.author.id}>#{usage_text}")
-            Process.sleep(4000)
-            Api.delete_message(channel_id, reply.id)
-          end)
-        end
-      {:error, %{ response: error_message }} ->
-        error_message
-        |> IO.inspect(label: "Unable to create or find channel #{@stats_channel}.")
-      {:error, error_message} ->
-        error_message
-        |> IO.inspect(label: "Unable to create or find channel #{@stats_channel}.")
-      z -> z
-        |> IO.inspect(label: "Unknown error when creating or finding channel #{@stats_channel}")
+  def command(%{ guild_id: guild_id, author: %{ id: user_id }, channel_id: channel_id, id: msg_id } = msg, args) do
+    nickname = get_nickname_from_message(msg.content)
+    unless nickname == nil do
+      reply = Api.create_message!(channel_id, "Ищу игрока с никнеймом `#{nickname}`...")
+      Task.start(fn ->
+        Bot.FaceIT.register_user(nickname, user_id, channel_id, guild_id)
+        Api.delete_message(channel_id, reply.id)
+      end)
+    else
+      Task.start(fn ->
+        reply = Api.create_message!(channel_id, "<@#{msg.author.id}>#{usage_text}")
+        Process.sleep(4000)
+        Api.delete_message(channel_id, reply.id)
+      end)
     end
   end
 
   def get_nickname_from_message(content) do
-    case content do
-      "!#{@command} " <> nickname -> nickname
-      _ -> nil
+    args = String.split(content)
+    with true <- length(args) > 1 do
+      "Комментарий: #{Enum.at(args, 1)}\n"
+    else
+      _ -> ""
     end
   end
 

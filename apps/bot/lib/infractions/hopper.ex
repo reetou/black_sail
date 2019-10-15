@@ -57,7 +57,6 @@ defmodule Bot.Infractions.Hopper do
          {:ok, %Member{} = member} <- Converters.to_member("<@#{user_id}>", guild_id),
          guild <- Nostrum.Cache.GuildCache.get!(guild_id),
          permissions <- Member.guild_permissions(member, guild) do
-      IO.inspect(member.user, label: "User bot??")
       unless :manage_channels in permissions or member.user.bot do
         restrict(user_id, guild_id)
       end
