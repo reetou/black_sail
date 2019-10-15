@@ -57,7 +57,7 @@ defmodule Bot.Cogs.Party do
       Выведет Embed-сообщение:
 
       Поиск Competitive FaceIT
-      @username Gold Nova I KDA 2
+      @username KDA 2
 
       Коммент: Предпочитаю играть с любителями народных песен
 
