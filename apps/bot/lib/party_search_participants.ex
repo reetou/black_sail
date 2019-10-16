@@ -29,7 +29,6 @@ defmodule Bot.PartySearchParticipants do
          x <- length(rows),
          true <- x > 0,
          {:ok, %Bot.PartySearchParticipants{} = data} <- Enum.fetch(rows, 0) do
-      IO.inspect(rows, label: "Rows are")
       update_party_search_message(data)
     end
   end
