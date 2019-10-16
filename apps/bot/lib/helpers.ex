@@ -10,6 +10,7 @@ defmodule Bot.Helpers do
   import Embed
   alias Nosedrum.{Converters}
   alias Bot.Cogs.{Party, Register, Room}
+  require Logger
 
   @errors_channel "errors"
   @logs_channel "logs"
@@ -17,6 +18,7 @@ defmodule Bot.Helpers do
   @game_channel_prefix "Канал пати"
   @rules_title "Правила очень простые:"
   @commands_channel "команды"
+  @contact_admin_channel "админ-чат"
   @rules_text """
 1. Не быть мудаком
 2. Не оскорблять других людей и их родителей
@@ -54,6 +56,8 @@ defmodule Bot.Helpers do
   def game_channel_prefix, do: @game_channel_prefix
 
   def commands_channel, do: @commands_channel
+
+  def contact_admin_channel, do: @contact_admin_channel
 
   def voice_channel_type, do: 2
 
@@ -102,7 +106,6 @@ defmodule Bot.Helpers do
     case Converters.to_channel(channel_name, guild_id) do
       {:error, _} ->
         Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: permission_overwrites)
-        |> IO.inspect(label: "Created channel")
       {:ok, %{ id: id }} -> Api.modify_channel(id, permission_overwrites: permission_overwrites, type: type, name: channel_name)
     end
   end
@@ -207,7 +210,9 @@ defmodule Bot.Helpers do
           end
         end)
       else
-        err -> err |> IO.inspect(label: "Cannot edit permissions for role #{role_name}")
+        err ->
+          Logger.error("Cannot edit permissions for role #{role_name}")
+          err
       end
     end)
   end
