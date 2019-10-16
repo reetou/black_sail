@@ -81,7 +81,7 @@ defmodule Bot.Cogs.Kick do
   end
 
   @impl true
-  def predicates, do: [&CustomPredicates.guild_only/1, &CustomPredicates.is_commands_channel?/1]
+  def predicates, do: [&CustomPredicates.guild_only/1, &CustomPredicates.is_commands_channel?/1, &CustomPredicates.in_own_voice_channel/1]
 
   def command, do: @command
   def channel_name, do: @channel_name
