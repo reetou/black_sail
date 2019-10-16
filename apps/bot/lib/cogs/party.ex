@@ -387,7 +387,7 @@ defmodule Bot.Cogs.Party do
       |> Enum.filter(fn %{name: name} -> is_kdr_role?(name) end)
       |> Enum.map(fn r ->
         unless r == nil do
-          Map.fetch(:name)
+          Map.fetch(r, :name)
         else
           nil
         end
