@@ -88,12 +88,18 @@ defmodule Bot.Cogs.Party do
 
   def ensure_user_in_voice_channel(%{ guild_id: guild_id, channel_id: channel_id } = msg) do
     with true <- Helpers.is_in_voice_channel?(msg.author.id) do
-      voice_channel_id = Bot.VoiceMembers.get_channel_id_by_user_id(msg.author.id)
-      if voice_channel_id == nil do
-        response = "Что-то пошло не так. <@#{msg.author.id}>, пожалуйста, введите команду заново"
-        Task.start(fn -> Api.create_message!(channel_id, response) end)
+      case CustomPredicates.in_own_voice_channel(msg) do
+        :passthrough ->
+          voice_channel_id = Bot.VoiceMembers.get_channel_id_by_user_id(msg.author.id)
+          if voice_channel_id == nil do
+            response = "Что-то пошло не так. <@#{msg.author.id}>, пожалуйста, введите команду заново"
+            Task.start(fn -> Api.create_message!(channel_id, response) end)
+          end
+          {:ok, voice_channel_id}
+        {:error, reason} = result ->
+          Helpers.reply_and_delete_message(channel_id, reason, 15000)
+          result
       end
-      {:ok, voice_channel_id}
     else
       _ ->
         username_with_discriminator = msg.author.username <> "#" <> msg.author.discriminator

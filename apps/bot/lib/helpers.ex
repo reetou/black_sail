@@ -4,11 +4,12 @@ defmodule Bot.Helpers do
     Api,
     Struct.User,
     Struct.Embed,
+    Struct.Guild.Member,
     Permission,
   }
   import Embed
   alias Nosedrum.{Converters}
-  alias Bot.Cogs.{Party, Register}
+  alias Bot.Cogs.{Party, Register, Room}
 
   @errors_channel "errors"
   @logs_channel "logs"
@@ -216,5 +217,33 @@ defmodule Bot.Helpers do
          end
        )
     |> Enum.filter(fn x -> x != nil end)
+  end
+
+
+
+  def get_user_current_personal_or_party_voice_channel(user_id, guild_id) do
+    with channel_id when channel_id != nil <- Bot.VoiceMembers.get_channel_id_by_user_id(user_id),
+         {:ok, channel} <- Converters.to_channel("#{channel_id}", guild_id),
+         {
+           :ok,
+           %Member{
+             user: %{
+               username: username,
+               discriminator: discriminator
+             }
+           }
+         } <- Converters.to_member("<@#{user_id}>", guild_id) do
+      personal_channel_name = Room.channel_name_for_user(username <> "#" <> discriminator)
+      party_channel_name = Party.get_channel_name_for_member(username <> "#" <> discriminator)
+      case channel.name do
+        x when x == personal_channel_name -> {:ok, channel}
+        x when x == party_channel_name -> {:ok, channel}
+        _ -> {:error, :other}
+      end
+    else
+      z ->
+        IO.inspect(z, label: "Something totally wrong on kick")
+        nil
+    end
   end
 end

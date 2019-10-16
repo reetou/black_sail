@@ -5,6 +5,7 @@ defmodule Bot.Predicates do
     Helpers,
     Cogs.Party,
     Cogs.Register,
+    VoiceMembers,
   }
   alias Nostrum.Permission
   alias Nostrum.Struct.Message
@@ -26,6 +27,20 @@ defmodule Bot.Predicates do
 
   def is_commands_channel?(msg) do
     check_expected_channel(msg, Helpers.commands_channel)
+  end
+
+  def in_own_voice_channel(%{ channel_id: channel_id } = msg) when channel_id == nil do
+    {:error, "Нужно находиться в голосовом канале на сервере, чтобы использовать эту команду"}
+  end
+
+  def in_own_voice_channel(msg) do
+    with {:ok, channel} <- Helpers.get_user_current_personal_or_party_voice_channel(msg.author.id, msg.guild_id) do
+      :passthrough
+    else
+      _err ->
+        reason = "<@#{msg.author.id}>, эту команду можно использовать только находясь в канале, который создан вами. Покиньте голосовой канал и введите команду заново"
+        {:error, reason}
+    end
   end
 
   def guild_only(%Message{guild_id: nil}), do: {:error, "Эту команду можно использовать только на сервере"}
