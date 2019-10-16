@@ -35,6 +35,7 @@ defmodule Bot.Consumer.Ready do
     "admin" => %{
       ## Удалить пустые личные комнаты
       "remove_all_channels" => Cogs.Admin.RemoveAllChannels,
+      "remove_all_roles" => Cogs.Admin.RemoveAllRoles,
     },
   }
 
