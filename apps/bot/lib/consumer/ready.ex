@@ -32,6 +32,10 @@ defmodule Bot.Consumer.Ready do
       ## Удалить пустые личные комнаты
       "purge" => Cogs.Rooms.Purge,
     },
+    "admin" => %{
+      ## Удалить пустые личные комнаты
+      "remove_all_channels" => Cogs.Admin.RemoveAllChannels,
+    },
   }
 
   @aliases %{
