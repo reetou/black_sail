@@ -171,7 +171,9 @@ defmodule Bot.Cogs.Admin.Reinit do
           Logger.error("Cannot recreate channel for Party, #{err}")
           err
       end
+    end)
 
+    create_stats_channel = Task.async(fn ->
       Logger.info("Recreate channel for register command in guild #{guild_id}")
       with {:ok, %{ id: channel_id }} <- Register.recreate_channel(guild_id) do
         Task.start(fn ->
@@ -182,12 +184,11 @@ defmodule Bot.Cogs.Admin.Reinit do
           Logger.error("Cannot recreate channel for Register, #{err}")
           err
       end
+    end)
 
+    create_rules_channel = Task.async(fn ->
       Logger.info("Recreating rules channel in guild #{guild_id}")
       Helpers.ensure_rules_message_exists(guild_id)
-
-      Logger.info("Recreating roles for guild #{guild_id}")
-      Register.recreate_roles(guild_id)
     end)
 
     Task.await(applying_restricted_roles)
@@ -195,6 +196,10 @@ defmodule Bot.Cogs.Admin.Reinit do
     Task.await(create_logs_channel)
     Task.await(create_commands_channel)
     Task.await(create_party_channel)
+    Task.await(create_stats_channel)
+    Task.await(create_rules_channel)
+    Logger.info("Recreating roles for guild #{guild_id}")
+    Register.recreate_roles(guild_id)
     Bot.Infractions.set_restricted_roles_positions(guild_id)
     Bot.Infractions.send_to_log(success_message(msg), guild_id)
 
