@@ -20,6 +20,7 @@ defmodule Bot.Helpers do
   @commands_channel "команды"
   @contact_admin_channel "админ-чат"
   @chat_channel "общий чат"
+  @mee6_role "MEE6"
   @rules_text """
 1. Не быть мудаком
 2. Не оскорблять других людей и их родителей
@@ -105,11 +106,19 @@ defmodule Bot.Helpers do
     end)
   end
 
+  def mee6_permissions_overwrites(guild_id) do
+    case Converters.to_role(@mee6_role, guild_id) do
+      {:ok, role} -> List.wrap(%{ id: role.id, deny: Permission.to_bitset([:send_messages]), type: "role" })
+      _ -> []
+    end
+  end
+
   def create_channel_if_not_exists(channel_name, guild_id, type \\ 0, permission_overwrites \\ []) do
+    overwrites = permission_overwrites ++ mee6_permissions_overwrites(guild_id)
     case Converters.to_channel(channel_name, guild_id) do
       {:error, _} ->
-        Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: permission_overwrites)
-      {:ok, %{ id: id }} -> Api.modify_channel(id, permission_overwrites: permission_overwrites, type: type, name: channel_name)
+        Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: overwrites)
+      {:ok, %{ id: id }} -> Api.modify_channel(id, permission_overwrites: overwrites, type: type, name: channel_name)
     end
   end
 
