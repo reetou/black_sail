@@ -152,8 +152,8 @@ defmodule Bot.Cogs.Party do
     })
   end
 
-  def write_party_message_history(%PartySearchParticipants{ voice_channel_id: voice_channel_id } = data) do
-    PartySearchParticipants.delete_party_messages_for_voice_channel(voice_channel_id)
+  def write_party_message_history(%PartySearchParticipants{ voice_channel_id: voice_channel_id, guild_id: guild_id } = data) do
+    PartySearchParticipants.delete_party_messages_for_voice_channel(voice_channel_id, guild_id)
     PartySearchParticipants.write_party_search_message(data)
   end
 
@@ -261,7 +261,7 @@ defmodule Bot.Cogs.Party do
     end
   end
 
-  defp get_channel_name_for_member(username) do
+  def get_channel_name_for_member(username) do
     "#{Helpers.game_channel_prefix} #{username}"
   end
 

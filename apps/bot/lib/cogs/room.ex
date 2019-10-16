@@ -85,8 +85,8 @@ defmodule Bot.Cogs.Room do
             name: channel_name,
             type: Helpers.voice_channel_type,
             permission_overwrites: overwrites
-                                   ++ get_members_overwrites_from_args(guild_id, args)
-                                   ++ get_roles_overwrites_from_args(guild_id, args)
+                                   ++ get_overwrites_ids_from_args(guild_id, args, :member)
+                                   ++ get_overwrites_ids_from_args(guild_id, args, :role)
                                    ++ Helpers.infraction_roles_permission_overwrites(guild_id),
             parent_id: parent_id,
           ]
@@ -105,15 +105,21 @@ defmodule Bot.Cogs.Room do
     end
   end
 
-  def get_members_overwrites_from_args(guild_id, args) do
+  defp add_overwrites_to_map(map, type) when is_atom(type) do
+    map
+    |> Map.put(type, Permission.to_bitset([:connect, :speak, :view_channel]))
+  end
+
+  def get_overwrites_ids_from_args(guild_id, args, overwrite_id_type, type \\ :allow)
+  def get_overwrites_ids_from_args(guild_id, args, overwrite_id_type, type) when overwrite_id_type == :member do
     args
     |> Enum.map(fn possible_user_mention ->
       with {:ok, member} <- Converters.to_member(possible_user_mention, guild_id) do
         %{
           id: member.user.id,
-          type: "member",
-          allow: Permission.to_bitset([:connect, :speak])
+          type: Atom.to_string(overwrite_id_type),
         }
+        |> add_overwrites_to_map(type)
       else
         _err -> nil
       end
@@ -121,15 +127,15 @@ defmodule Bot.Cogs.Room do
     |> Enum.filter(fn o -> o != nil end)
   end
 
-  def get_roles_overwrites_from_args(guild_id, args) do
+  def get_overwrites_ids_from_args(guild_id, args, overwrite_id_type, type) when overwrite_id_type == :role do
     args
     |> Enum.map(fn possible_role_mention ->
       with {:ok, role} <- Converters.to_role(possible_role_mention, guild_id) do
         %{
           id: role.id,
-          type: "role",
-          allow: Permission.to_bitset([:connect, :speak])
+          type: Atom.to_string(overwrite_id_type),
         }
+        |> add_overwrites_to_map(type)
       else
         _err -> nil
       end

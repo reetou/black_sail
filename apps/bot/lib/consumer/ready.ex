@@ -25,6 +25,7 @@ defmodule Bot.Consumer.Ready do
     "update" => Cogs.Update,
     "room" => Cogs.Room,
     "add" => Cogs.Add,
+    "kick" => Cogs.Kick,
     "remove" => Cogs.Remove,
     ## Role configuration
     "rooms" => %{
@@ -35,15 +36,26 @@ defmodule Bot.Consumer.Ready do
 
   @aliases %{
     "h" => Map.fetch!(@commands, "help"),
-    "h" => Map.fetch!(@commands, "help"),
 
     "фвв" => Map.fetch!(@commands, "add"),
     "ADD" => Map.fetch!(@commands, "add"),
     "добавить" => Map.fetch!(@commands, "add"),
+
     "куьщму" => Map.fetch!(@commands, "remove"),
     "REMOVE" => Map.fetch!(@commands, "remove"),
     "delete" => Map.fetch!(@commands, "remove"),
     "удалить" => Map.fetch!(@commands, "remove"),
+    "удали" => Map.fetch!(@commands, "remove"),
+
+    "кик" => Map.fetch!(@commands, "kick"),
+    "кикни" => Map.fetch!(@commands, "kick"),
+    "кикнуть" => Map.fetch!(@commands, "kick"),
+    "лшсл" => Map.fetch!(@commands, "kick"),
+    "ЛШСЛ" => Map.fetch!(@commands, "kick"),
+    "KICK" => Map.fetch!(@commands, "kick"),
+    "ban" => Map.fetch!(@commands, "kick"),
+    "BAN" => Map.fetch!(@commands, "kick"),
+    "бан" => Map.fetch!(@commands, "kick"),
 
     "рум" => Map.fetch!(@commands, "room"),
     "кщщь" => Map.fetch!(@commands, "room"),

@@ -68,12 +68,16 @@ defmodule Bot.Cogs.Add do
   def command, do: @command
   def channel_name, do: @channel_name
 
+  def command(msg, args) when length(args) == 0 do
+    Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, эта команда должна быть вызвана с аргументами. Пример: #{List.first(usage)}", 15000)
+  end
+
   @impl true
   def command(%Message{ guild_id: guild_id, channel_id: reply_channel_id, author: %{ username: username, discriminator: discriminator } } = msg, args) do
     with {:ok, %{ id: everyone_role_id }} <- Converters.to_role("@everyone", guild_id),
          {:ok, %Channel{} = personal_channel} <- Room.get_personal_channel(guild_id, username <> "#" <> discriminator) do
       create_invite_task = Task.async(fn -> Api.create_channel_invite!(personal_channel.id, max_age: 1200) end)
-      Room.get_members_overwrites_from_args(guild_id, args) ++ Room.get_roles_overwrites_from_args(guild_id, args)
+      Room.get_overwrites_ids_from_args(guild_id, args, :member) ++ Room.get_overwrites_ids_from_args(guild_id, args, :role)
       |> Enum.each(fn %{id: overwrite_id, type: type, allow: allow} ->
         Task.start(fn ->
           {:ok} = Api.edit_channel_permissions(personal_channel.id, overwrite_id, %{ type: type, allow: allow })

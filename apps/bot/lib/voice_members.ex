@@ -18,7 +18,7 @@ defmodule Bot.VoiceMembers do
         Logger.debug("Old channel not empty, updating it.")
         PartySearchParticipants.handle_voice_update(old_channel_id, data.guild_id)
       else
-        PartySearchParticipants.delete_party_messages_for_voice_channel(old_channel_id)
+        PartySearchParticipants.delete_party_messages_for_voice_channel(old_channel_id, data.guild_id)
       end
     else
       _ -> Logger.debug("Old channel id not equal to new, doing nothing")

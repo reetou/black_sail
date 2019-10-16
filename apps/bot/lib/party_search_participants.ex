@@ -72,9 +72,13 @@ defmodule Bot.PartySearchParticipants do
     end)
   end
 
-  def delete_party_messages_for_voice_channel(voice_channel_id) do
+  def delete_party_messages_for_voice_channel(voice_channel_id, guild_id) do
     Memento.transaction(fn ->
-      rows = Memento.Query.select(Bot.PartySearchParticipants, {:==, :voice_channel_id, voice_channel_id})
+      guards = [
+        {:==, :guild_id, guild_id},
+        {:==, :voice_channel_id, voice_channel_id}
+      ]
+      rows = Memento.Query.select(Bot.PartySearchParticipants, guards)
       Enum.each(rows, fn row ->
         Memento.Query.delete(Bot.PartySearchParticipants, row.message_id)
         Task.start(fn ->
