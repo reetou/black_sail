@@ -30,7 +30,7 @@ defmodule Bot.Helpers do
 !help - показать подробную информацию по всем командам
 
 !room - создает личную комнату, куда только у вас есть доступ. Вы можете мутить участников своей комнаты.
-  
+
 !add - разрешает упомянутым людям заходить в вашу комнату
 
 !remove - забирает право у упомянутых заходить в вашу комнату
@@ -132,7 +132,7 @@ defmodule Bot.Helpers do
     Task.start(fn ->
       reply = Api.create_message!(channel_id, text)
       Process.sleep(delete_after)
-      Api.delete_message!(reply.channel_id, reply.id)
+      Api.delete_message(reply.channel_id, reply.id)
     end)
   end
 
