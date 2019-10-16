@@ -9,7 +9,16 @@ defmodule Bot.Helpers do
   }
   import Embed
   alias Nosedrum.{Converters}
-  alias Bot.Cogs.{Party, Register, Room}
+  alias Bot.Cogs.{
+    Party,
+    Register,
+    Room,
+    Update,
+    KDR,
+    Kick,
+    Add,
+    Remove,
+  }
   require Logger
 
   @errors_channel "errors"
@@ -48,6 +57,38 @@ defmodule Bot.Helpers do
 !update - обновить данные с сайта FaceIT
 
 За подробностями смотрите в !help
+"""
+  @faq_text """
+*Как зарегистрировать свой ник на FaceIT в боте?*
+
+- Перейдите в канал #{"#" <> Register.stats_channel} и введите команду !#{Register.command} ваш_ник_на_FaceIT
+
+Если у вас уже был зарегистрированный ник в боте до этого, он будет заменен новым.
+
+*Как обновить статы и получить роль KDR*
+
+- Перейдите в канал #{"#" <> Register.stats_channel} и введите команду !#{Update.command} ваш_ник_на_FaceIT
+
+*Как найти пати?*
+
+- Перейдите в канал #{"#" <> Party.search_channel} и введите команду !#{Party.command}
+
+*Но я хочу найти пати с кдр как у меня!*
+
+- Тогда в канале #{"#" <> Party.search_channel} введи команду !#{KDR.command}
+
+*Чувак залетел в канал и поливает нас всех гадостями и включает музыку!*
+
+- Если это ваш личный канал или канал вашей пати, вы можете использовать команду !#{Kick.command}
+
+*Хочу добавить друга в свою личную комнату*
+
+- Что ж, !#{Add.command}
+
+*Не хочу, чтобы определенный человек заходил ко мне в руму*
+
+- !#{Remove.command}
+
 """
   @special_channels [Party.search_channel, Register.stats_channel, @logs_channel, @errors_channel, @rules_channel]
 
@@ -195,8 +236,13 @@ defmodule Bot.Helpers do
             |> put_description(@onboarding_text)
             |> put_color(0x43b581)
             |> put_footer("Счастья-здоровья и удачи")
+    faq_embed = %Embed{}
+            |> put_description(@faq_text)
+            |> put_color(0x4e7097)
+            |> put_footer("Если еще остались вопросы, пиши в админ чат")
     Api.create_message(channel.id, content: @rules_title, embed: embed)
     Api.create_message(channel.id, content: "**КОМАНДЫ**", embed: onboarding_embed)
+    Api.create_message(channel.id, content: "**Частые вопросы**", embed: faq_embed)
   end
 
   def delete_channel_if_exists(channel_name, guild_id) do
