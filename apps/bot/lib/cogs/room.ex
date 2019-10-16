@@ -74,17 +74,9 @@ defmodule Bot.Cogs.Room do
     with {:ok, channels} <- Api.get_guild_channels(guild_id),
          {:ok, %{ id: everyone_role_id }} <- Converters.to_role("@everyone", guild_id) do
       overwrites = [
-        %{
-          id: everyone_role_id,
-          type: "role",
-          deny: Permission.to_bitset([:connect, :speak])
-        },
-        %{
-          id: msg.author.id,
-          type: "member",
-          allow: Permission.to_bitset([:connect, :speak])
-        }
-      ] ++ get_members_overwrites_from_args(guild_id, args) ++ get_roles_overwrites_from_args(guild_id, args)
+        %{id: everyone_role_id, type: "role", deny: Permission.to_bitset([:connect, :speak])},
+        %{id: msg.author.id, type: "member", allow: Permission.to_bitset([:connect, :speak])}
+      ]
         channel_name = channel_name_for_user(username <> "#" <> discriminator)
         %Channel{id: parent_id} = get_or_create_parent_category(guild_id)
         {:ok, created_channel} = Api.create_guild_channel(
@@ -92,7 +84,10 @@ defmodule Bot.Cogs.Room do
           [
             name: channel_name,
             type: Helpers.voice_channel_type,
-            permission_overwrites: overwrites,
+            permission_overwrites: overwrites
+                                   ++ get_members_overwrites_from_args(guild_id, args)
+                                   ++ get_roles_overwrites_from_args(guild_id, args)
+                                   ++ Helpers.infraction_roles_permission_overwrites(guild_id),
             parent_id: parent_id,
           ]
         )
