@@ -373,14 +373,26 @@ defmodule Bot.Cogs.Party do
     name in kdr_roles_names
   end
 
+  defp is_kdr_role?(name) when name == nil do
+    false
+  end
+
+  def get_kdr_role_name(roles, guild_id) when roles == nil, do: nil
   def get_kdr_role_name(roles, guild_id) when is_list(roles) and length(roles) == 0, do: nil
   def get_kdr_role_name(roles, guild_id) do
-    role = roles
-    |> Helpers.get_guild_roles_by_id!(guild_id)
-    |> IO.inspect(label: "Got roles by ids")
-    |> Enum.filter(fn %{ name: name } -> is_kdr_role?(name) end)
-    |> List.first
-    |> Map.fetch(:name)
+    role =
+      roles
+      |> Helpers.get_guild_roles_by_id!(guild_id)
+      |> IO.inspect(label: "Got roles by ids")
+      |> Enum.filter(fn %{name: name} -> is_kdr_role?(name) end)
+      |> Enum.map(fn r ->
+        unless r == nil do
+          Map.fetch(:name)
+        else
+          nil
+        end
+      end)
+      |> List.first
     case role do
       {:ok, name} -> name
       _ -> nil
