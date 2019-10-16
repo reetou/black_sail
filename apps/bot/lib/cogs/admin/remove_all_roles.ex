@@ -57,7 +57,12 @@ defmodule Bot.Cogs.Admin.RemoveAllRoles do
   end
 
   @impl true
-  def predicates, do: [&CustomPredicates.guild_only/1, CustomPredicates.has_permission(:administrator)]
+  def predicates,
+      do: [
+        &CustomPredicates.guild_only/1,
+        CustomPredicates.has_permission(:administrator),
+        CustomPredicates.bot_has_permission(:administrator)
+      ]
 
   def command, do: @command
 

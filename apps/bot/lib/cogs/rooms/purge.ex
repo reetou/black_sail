@@ -47,7 +47,12 @@ defmodule Bot.Cogs.Rooms.Purge do
       """
 
   @impl true
-  def predicates, do: [&CustomPredicates.guild_only/1, CustomPredicates.has_permission(:manage_channels)]
+  def predicates,
+      do: [
+        &CustomPredicates.guild_only/1,
+        CustomPredicates.has_permission(:manage_channels),
+        CustomPredicates.bot_has_permission(:manage_channels)
+      ]
 
   def command, do: @command
 
