@@ -64,6 +64,7 @@ defmodule Bot.Cogs.Admin.RemoveAllChannels do
   @impl true
   def command(%Message{ guild_id: guild_id, channel_id: channel_id } = msg, args) do
     with {:ok, %{ channels: channels }} <- GuildCache.get(guild_id) do
+      Helpers.reply_and_delete_message(channel_id, "<@#{msg.author.id}>, начинаю удалять все каналы...", 120000)
       response = channels
       |> Enum.filter(fn {id, channel} ->
         id != channel_id and channel.name != Helpers.logs_channel
@@ -77,7 +78,6 @@ defmodule Bot.Cogs.Admin.RemoveAllChannels do
       end)
       |> Enum.filter(fn ch -> ch != nil end)
       |> success_message(msg)
-      Helpers.reply_and_delete_message(channel_id, response)
       Bot.Infractions.send_to_log(response, guild_id)
     else
       err ->
