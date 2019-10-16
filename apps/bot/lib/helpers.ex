@@ -231,7 +231,6 @@ defmodule Bot.Helpers do
             |> put_description(@rules_text)
             |> put_color(0x9768d1)
             |> put_timestamp(DateTime.utc_now())
-            |> put_footer("Последний перезапуск бота: ")
     onboarding_embed = %Embed{}
             |> put_description(@onboarding_text)
             |> put_color(0x43b581)
