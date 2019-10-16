@@ -23,6 +23,7 @@ defmodule Bot.Cogs.Admin.RemoveAllChannels do
   alias Guild.Member
   alias Nostrum.Permission
   import Embed
+  require Logger
 
   @moduledoc """
     Удаляет пустые личные комнаты на сервере
@@ -70,6 +71,7 @@ defmodule Bot.Cogs.Admin.RemoveAllChannels do
         id != channel_id and channel.name != Helpers.logs_channel
       end)
       |> Enum.map(fn {id, channel} ->
+        Logger.info("Removing channel #{channel.name}")
         with {:ok, deleted_channel} <- Api.delete_channel(channel.id, "Requested by #{msg.author.username}") do
           deleted_channel
         else
