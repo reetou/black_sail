@@ -77,6 +77,38 @@ defmodule Bot.Predicates do
     end
   end
 
+  def bot_has_permission(permission) when permission in @all_permissions do
+    fn msg ->
+      with {:is_on_guild, true} <- {:is_on_guild, msg.guild_id != nil},
+           {:ok, guild} <- GuildCache.get(msg.guild_id),
+           {:me, bot_user} when bot_user != nil <-
+             {:me, Nostrum.Cache.Me.get},
+           {:member, member} when member != nil <-
+             {:member, Map.get(guild.members, bot_user.id)},
+           {:has_permission, true} <-
+             {:has_permission, permission in Member.guild_permissions(member, guild)} do
+        :passthrough
+      else
+        {:error, _reason} ->
+          {:error, "❌ Не удалось проверить права бота на сервере"}
+
+        {:has_permission, false} ->
+          permission_string =
+            permission
+            |> Atom.to_string()
+            |> String.upcase()
+
+          {:error, "🚫 Бот должен иметь право `#{permission_string}` для использования этой команды"}
+
+        {:is_on_guild, false} ->
+          {:error, "🚫 Эта команда не может быть использована в ЛС"}
+
+        {:member, nil} ->
+          {:error, "❌ Не удалось проверить права бота на сервере"}
+      end
+    end
+  end
+
   defp check_expected_channel(%{ channel_id: channel_id, guild_id: guild_id, id: msg_id } = msg, expected_channel) do
     case Converters.to_channel("#{channel_id}", guild_id) do
       {:ok, %{ name: name }} when name == expected_channel -> {:ok, msg}
