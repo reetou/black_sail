@@ -40,22 +40,11 @@ defmodule Bot.Cogs.Rooms.Purge do
   def description,
       do: """
       ```
-      Создает личную комнату на количество человек, упомянутых в команде
+      Удаляет пустые личные комнаты
 
       #{Enum.reduce(usage, "Примеры использования:", fn text, acc -> acc <> "\n" <> text end)}
       ```
       """
-
-  def success_message(%Invite{ channel: %{ name: name }, code: code } = invite, msg) do
-    """
-    <@#{msg.author.id}>, для тебя и твоих друзей (если ты их указал) была создана комната **#{name}**!
-    Перейти: https://discord.gg/#{code}
-
-    Комната будет удалена в полночь, если будет пустовать.
-
-    Береги ее и люби.
-    """
-  end
 
   @impl true
   def predicates, do: [&CustomPredicates.guild_only/1, CustomPredicates.has_permission(:manage_channels)]
