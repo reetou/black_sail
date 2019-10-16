@@ -24,6 +24,27 @@ defmodule Bot.Helpers do
 4. Не присваивать чужое
 5. Не обходить наказания
 """
+  @onboarding_text """
+Так как вы сэкономили время на прочтении правил, посмею украсть оставшиеся секунды на краткий гайд по командам сервера:
+
+!help - показать подробную информацию по всем командам
+
+!room - создает личную комнату, куда только у вас есть доступ. Вы можете мутить участников своей комнаты.
+  
+!add - разрешает упомянутым людям заходить в вашу комнату
+
+!remove - забирает право у упомянутых заходить в вашу комнату
+
+!party - отправить сообщение о поиске со свободным входом. Можно добавить комментарий после команды
+
+!kdr - отправить сообщение о поиске с ограничением по кдр. Можно указать ограничение поменьше, смотрите в !help за подробностями
+
+!register - внести свой ник на FaceIT в базу бота, чтобы накидать вам ролей в зависимости от ваших статов
+
+!update - обновить данные с сайта FaceIT
+
+За подробностями смотрите в !help
+"""
   @special_channels [Party.search_channel, Register.stats_channel, @logs_channel, @errors_channel, @rules_channel]
 
   def errors_channel, do: @errors_channel
@@ -151,7 +172,12 @@ defmodule Bot.Helpers do
             |> put_color(0x9768d1)
             |> put_timestamp(DateTime.utc_now())
             |> put_footer("Последний перезапуск бота: ")
+    onboarding_embed = %Embed{}
+            |> put_description(@onboarding_text)
+            |> put_color(0x43b581)
+            |> put_footer("Счастья-здоровья и удачи")
     Api.create_message(channel.id, content: @rules_title, embed: embed)
+    Api.create_message(channel.id, content: "**КОМАНДЫ**", embed: onboarding_embed)
   end
 
   def delete_channel_if_exists(channel_name, guild_id) do
