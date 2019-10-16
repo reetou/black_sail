@@ -65,7 +65,8 @@ defmodule Bot.Cogs.Admin.Reinit do
       do: [
         &CustomPredicates.guild_only/1,
         CustomPredicates.has_permission(:administrator),
-        CustomPredicates.bot_has_permission(:administrator)
+        CustomPredicates.bot_has_permission(:administrator),
+        &CustomPredicates.is_zae/1,
       ]
 
   def command, do: @command
@@ -80,16 +81,18 @@ defmodule Bot.Cogs.Admin.Reinit do
 
   def reinit(%{ guild_id: guild_id } = msg) do
 
-    create_restricted_roles = Task.async(fn ->
-      Bot.Infractions.create_restricted_roles(guild_id)
-    end)
+
+    Bot.Infractions.create_restricted_roles(guild_id)
 
     applying_restricted_roles = Task.async(fn ->
       with {:ok, channels} <- Api.get_guild_channels(guild_id) do
         Logger.info("Applying restricted roles\' permissions for channels...")
         Helpers.apply_permissions_for_infraction_roles(channels, guild_id)
       else
-        err -> err |> IO.inspect(label: "Cannot get channels for guild #{guild_id}")
+        err ->
+          Logger.error("Cannot apply restricted roles permissions")
+          err
+          |> IO.inspect(label: "Cannot get channels for guild #{guild_id}")
       end
     end)
 
@@ -187,7 +190,6 @@ defmodule Bot.Cogs.Admin.Reinit do
       Register.recreate_roles(guild_id)
     end)
 
-    Task.await(create_restricted_roles)
     Task.await(applying_restricted_roles)
     Task.await(modifying_everyone_role)
     Task.await(create_logs_channel)

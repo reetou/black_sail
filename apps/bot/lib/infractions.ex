@@ -138,8 +138,11 @@ defmodule Bot.Infractions do
   def create_restricted_roles(guild_id) do
     Helpers.restricted_roles
     |> Enum.each(fn {name, map} ->
-      with {:ok, role} <- Api.create_guild_role(guild_id, [color: 0x24211a, name: name, permissions: Map.fetch!(map, :deny)]) do
-      else
+      IO.inspect(map, label: "Restricted role #{name} permissions")
+      permissions = Map.fetch!(Helpers.restricted_roles_perms, name)
+      |> IO.inspect(label: "Permissions are from map")
+      case Api.create_guild_role(guild_id, [color: 0x24211a, name: name, permissions: permissions]) do
+        {:ok, role} -> Logger.info("Created restricted role #{name}")
         err -> Logger.error("Cannot create role #{name}: #{err}")
       end
     end)

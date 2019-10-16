@@ -80,6 +80,10 @@ defmodule Bot.Helpers do
     allow: Permission.to_bitset([:connect, :speak, :mute_members, :deafen_members, :move_members])
   }
 
+  def restricted_roles_perms, do: %{
+    Bot.Infractions.Hopper.role_name => Permission.to_bitset([:attach_files, :send_messages, :add_reactions])
+  }
+
   def restricted_roles do
     [
       {
