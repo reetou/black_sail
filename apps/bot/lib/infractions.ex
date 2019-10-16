@@ -6,6 +6,7 @@ defmodule Bot.Infractions do
   alias Nosedrum.Converters
   alias Nostrum.Snowflake
   alias Bot.Helpers
+  require Logger
 
   @derive Jason.Encoder
   defstruct [
@@ -132,6 +133,32 @@ defmodule Bot.Infractions do
          {:ok, channel} <- Converters.to_channel(Helpers.logs_channel, guild_id) do
       Api.create_message(channel.id, message)
     end
+  end
+
+  def create_restricted_roles(guild_id) do
+    Helpers.restricted_roles
+    |> Enum.each(fn {name, map} ->
+      with {:ok, role} <- Api.create_guild_role(guild_id, [color: 0x24211a, name: name, permissions: Map.fetch!(map, :deny)]) do
+      else
+        err -> Logger.error("Cannot create role #{name}: #{err}")
+      end
+    end)
+  end
+
+  def set_restricted_roles_positions(guild_id) do
+    restricted_roles_names =
+      Helpers.restricted_roles
+      |> Enum.map(fn {name, map} -> name end)
+    roles_to_modify =
+      Api.get_guild_roles!(guild_id)
+      |> Enum.map(fn role ->
+        if role.name in restricted_roles_names do
+          Map.put(role, :position, 300)
+        end
+        nil
+      end)
+      |> Enum.filter(fn r -> r != nil end)
+    Api.modify_guild_role_positions(guild_id, roles_to_modify)
   end
 
 end
