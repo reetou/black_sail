@@ -143,11 +143,9 @@ defmodule Bot.Cogs.Register do
   end
 
   def get_nickname_from_message(content) do
-    args = String.split(content)
-    with true <- length(args) > 1 do
-      "Комментарий: #{Enum.at(args, 1)}\n"
-    else
-      _ -> ""
+    case content do
+      "!#{@command} " <> nickname -> nickname
+      _ -> nil
     end
   end
 
