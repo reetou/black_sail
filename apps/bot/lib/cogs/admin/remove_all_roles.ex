@@ -23,6 +23,7 @@ defmodule Bot.Cogs.Admin.RemoveAllRoles do
   alias Guild.Member
   alias Nostrum.Permission
   import Embed
+  require Logger
 
   @moduledoc """
     Удаляет пустые личные комнаты на сервере
@@ -78,7 +79,26 @@ defmodule Bot.Cogs.Admin.RemoveAllRoles do
                with {:ok} <- Api.delete_guild_role(guild_id, role.id, reason) do
                  role
                else
-                 _ -> nil
+                 err ->
+                   case err do
+                     {
+                       :error,
+                       %Nostrum.Error.ApiError{
+                         response: %{
+                           code: 50013,
+                           message: "Missing Permissions"
+                         },
+                         status_code: 403
+                       }
+                     } ->
+                       Helpers.reply_and_delete_message(channel_id, "Нет прав на изменение роли #{role.name}. Возможно, нет прав или эта роль выше роли бота")
+                       role
+                     _ ->
+                       IO.inspect(err, label: "Delete role error")
+                       unless role.name == "@everyone", do:
+                         Logger.error("Cannot delete role #{role.name}")
+                       nil
+                   end
                end
              end
            )
