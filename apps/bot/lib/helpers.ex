@@ -56,7 +56,7 @@ defmodule Bot.Helpers do
         Bot.Infractions.Hopper.role_name,
         %{
           type: "role",
-          deny: Permission.to_bitset([:connect, :speak])
+          deny: Permission.to_bitset([:connect, :speak, :view_channel])
         }
       }
     ]
@@ -66,6 +66,14 @@ defmodule Bot.Helpers do
     [
       %{ id: role_id, type: "role", deny: Permission.to_bitset([:attach_files, :embed_links, :send_tts_messages, :mention_everyone]) },
     ]
+  end
+
+  def infraction_roles_permission_overwrites(guild_id) do
+    restricted_roles
+    |> Enum.map(fn {name, map} ->
+      {:ok, %{ id: id }} = Converters.to_role(name, guild_id)
+      Map.put(map, :id, id)
+    end)
   end
 
   def create_channel_if_not_exists(channel_name, guild_id, type \\ 0, permission_overwrites \\ []) do

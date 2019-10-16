@@ -234,7 +234,7 @@ defmodule Bot.Cogs.Party do
       parent_id: parent_category.id,
       permission_overwrites: [
         Map.put(Helpers.allow_manage_voice_channel(:member), :id, user_id)
-      ],
+      ] ++ Helpers.infraction_roles_permission_overwrites(guild_id),
     ])
   end
 
@@ -267,7 +267,6 @@ defmodule Bot.Cogs.Party do
 
   def set_permissions_for_party_voice_channel(voice_channel_id, guild_id) do
     Register.kdr_roles
-    |> Map.put("@everyone", [])
     |> Enum.map(fn role_data ->
       role_data
       |> Tuple.to_list
@@ -281,8 +280,12 @@ defmodule Bot.Cogs.Party do
     end)
     |> Enum.filter(fn r -> r != nil end)
     |> Enum.each(fn %{id: id, name: name} ->
-      Logger.debug("Allow speak and connect for role #{name} to channel #{voice_channel_id}")
-      Api.edit_channel_permissions(voice_channel_id, id, Helpers.allow_speak_and_connect :role)
+      Logger.debug("Delete permissions for role #{name} from channel #{voice_channel_id}")
+      Api.delete_channel_permissions(voice_channel_id, id)
+    end)
+    Task.start(fn ->
+      {:ok, %{ id: everyone_role_id }} = Converters.to_role("@everyone", guild_id)
+      Api.edit_channel_permissions(voice_channel_id, everyone_role_id, Helpers.allow_speak_and_connect :role)
     end)
   end
 
@@ -346,7 +349,7 @@ defmodule Bot.Cogs.Party do
     |> Enum.filter(fn r -> r != nil end)
     |> Enum.each(fn %{id: id, name: name} ->
       Logger.debug("Deny speak and connect for role #{name}")
-      Api.edit_channel_permissions(voice_channel_id, id, Helpers.deny_speak_and_connect :role)
+      Api.delete_channel_permissions(voice_channel_id, id)
     end)
   end
 

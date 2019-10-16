@@ -75,8 +75,8 @@ defmodule Bot.Cogs.Remove do
       Room.get_members_overwrites_from_args(guild_id, args) ++ Room.get_roles_overwrites_from_args(guild_id, args)
       |> Enum.each(fn %{id: overwrite_id, type: type, allow: bitset} ->
         Task.start(fn ->
-          {:ok} = Api.edit_channel_permissions(personal_channel.id, overwrite_id, %{ type: type, deny: bitset })
-                  |> IO.inspect(label: "EDITED CHANNEL PERMISSIONS")
+          {:ok} = Api.delete_channel_permissions(personal_channel.id, overwrite_id)
+                  |> IO.inspect(label: "DELETED CHANNEL PERMISSIONS")
           if type == "member" and Bot.VoiceMembers.get_channel_id_by_user_id(overwrite_id) == personal_channel.id do
             Api.modify_guild_member(guild_id, overwrite_id, %{ channel_id: nil })
           end
