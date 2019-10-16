@@ -28,7 +28,9 @@ defmodule Bot.Helpers do
   @rules_title "Правила очень простые:"
   @commands_channel "команды"
   @contact_admin_channel "админ-чат"
-  @chat_channel "общий чат"
+  @get_started_channel "с-чего-начать"
+  @greetings_channel "приветствия"
+  @chat_channel "общий-чат"
   @mee6_role "MEE6"
   @rules_text """
 1. Не быть мудаком
@@ -37,6 +39,39 @@ defmodule Bot.Helpers do
 4. Не присваивать чужое
 5. Не обходить наказания
 """
+  @get_started_messages [
+  """
+Йоу! Чтобы начать искать пати и тусить, начни с прочтения самого последнего сообщения в канале #{"#" <> @rules_channel}, там есть все нужные команды для тебя
+Самое первое, что ты захочешь использовать - !#{Party.command} в канале #{"#" <> Party.search_channel}. Вперед!
+""",
+"""
+Қайырлы кеш! Если хочешь поискать пати, заходи сюда: #{"#" <> Party.search_channel}, пообщаться сюда: #{"#" <> @chat_channel}
+Все остальное в правилах: #{"#" <> @rules_channel}
+""",
+"""
+**RUSH B DONT STOP**
+Поиск пати для игры: #{"#" <> Party.search_channel}, поболтать - сюда: #{"#" <> @chat_channel}
+Все остальное в правилах: #{"#" <> @rules_channel}
+""",
+"""
+**AWP PLS**
+Поиск пати для игры: #{"#" <> Party.search_channel}
+Поболтать: #{"#" <> @chat_channel}
+Все остальное в правилах: #{"#" <> @rules_channel}
+""",
+"""
+**рУсСкиЕ ЕстЬ??77**
+Найти команду: #{"#" <> Party.search_channel}
+Покумекать: #{"#" <> @chat_channel}
+Все остальное в правилах: #{"#" <> @rules_channel}
+""",
+"""
+**АЙ СМОУК МИД**
+Найти команду: #{"#" <> Party.search_channel}
+Поговорить: #{"#" <> @chat_channel}
+Все остальное в правилах: #{"#" <> @rules_channel}
+""",
+  ]
   @onboarding_text """
 Так как вы сэкономили время на прочтении правил, посмею украсть оставшиеся секунды на краткий гайд по командам сервера:
 
@@ -102,9 +137,36 @@ defmodule Bot.Helpers do
 
   def contact_admin_channel, do: @contact_admin_channel
 
+  def get_started_channel, do: @get_started_channel
+
   def chat_channel, do: @chat_channel
 
   def voice_channel_type, do: 2
+
+  def greet_user(user_id, guild_id) do
+    Logger.debug("Gonna greet user")
+    with {:ok, %{ id: reply_channel_id }} <- Converters.to_channel(@chat_channel, guild_id) do
+      channels_to_replace = [
+        @chat_channel,
+        @get_started_channel,
+        @commands_channel,
+        @contact_admin_channel,
+        @rules_channel,
+        Party.search_channel,
+        Register.stats_channel,
+      ]
+      greet_message =
+        channels_to_replace
+        |> Enum.reduce(Enum.random(@get_started_messages), fn name, acc ->
+          with {:ok, %{ id: id }} <- Converters.to_channel(name, guild_id) do
+            String.replace(acc, "#" <> name, "<#" <> "#{id}>")
+          else _ -> acc
+          end
+        end)
+      Api.create_message(reply_channel_id, content: "<@#{user_id}>\n" <> greet_message)
+    else _ -> Logger.error("Cannot greet user")
+    end
+  end
 
   def allow_speak_and_connect(type) when is_atom(type), do: %{
     type: Atom.to_string(type),
@@ -115,6 +177,13 @@ defmodule Bot.Helpers do
     type: Atom.to_string(type),
     deny: Permission.to_bitset([:connect, :speak])
   }
+
+  def channel_name_to_mention(channel_name, guild_id) do
+    with {:ok, %{ id: id }} <- Converters.to_role(channel_name, guild_id) do
+      "<#" <>"#{id}>"
+    else _ -> channel_name
+    end
+  end
 
   def allow_manage_voice_channel(type) when is_atom(type), do: %{
     type: Atom.to_string(type),

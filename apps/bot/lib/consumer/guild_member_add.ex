@@ -4,14 +4,13 @@ defmodule Bot.Consumer.GuildMemberAdd do
     UserCache,
   }
   alias Bot.Infractions
+  require Logger
 
-  def handle(%{ guild_id: guild_id, new_member: %{ user: %{ id: user_id } } } = data) do
-    with {:ok, guild} <- GuildCache.get(guild_id),
-         {:ok, member} <- UserCache.get(user_id) do
-      Infractions.reapply_active_infractions_for_user(user_id, guild_id)
-    else
-      err -> err |> IO.inspect(label: "Cannot find guild or member on GUILD_MEMBER_ADD")
-    end
+  def handle({guild_id, %{ user: %{ id: user_id } } = member} = data) do
+    Task.start(fn ->
+      Bot.Helpers.greet_user(user_id, guild_id)
+    end)
+    Infractions.reapply_active_infractions_for_user(user_id, guild_id)
   end
 
   def handle(data) do

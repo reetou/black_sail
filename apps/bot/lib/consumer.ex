@@ -43,7 +43,7 @@ defmodule Bot.Consumer do
   end
 
   @impl true
-  def handle_event({:GUILD_MEMBER_ADD, %{ guild_id: guild_id, new_member: new_member } = data, _ws_state}) when guild_id != nil and is_map(new_member) do
+  def handle_event({:GUILD_MEMBER_ADD, { guild_id, _member } = data, _ws_state}) do
     GuildMemberAdd.handle(data)
   end
 
