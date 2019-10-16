@@ -9,7 +9,7 @@ defmodule Bot.Infractions.Hopper do
   @prefix "hoppers"
   @expire_seconds 15
   @role_name "Войс мут"
-  @infraction_length_seconds 600
+  @infraction_length_seconds 180
 
   def role_name, do: @role_name
 
