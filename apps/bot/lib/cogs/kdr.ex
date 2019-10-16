@@ -56,7 +56,7 @@ defmodule Bot.Cogs.KDR do
       end
     else
       response = "<@#{msg.author.id}>, не удалось получить данные о вашем KDR. У вас точно есть роль KDR?"
-      Helpers.reply_and_delete_message(msg.channel_id, response)
+      Helpers.reply_and_delete_message(msg.channel_id, response, 20000)
     end
   end
 

@@ -61,11 +61,4 @@ defmodule Bot.Cogs.Update do
     Api.delete_message(channel_id, reply.id)
   end
 
-  def get_nickname_from_message(content) do
-    case content do
-      "!#{@command} " <> nickname -> nickname
-      _ -> nil
-    end
-  end
-
 end
