@@ -124,8 +124,19 @@ defmodule Bot.Cogs.Admin.Reinit do
       Helpers.create_channel_if_not_exists(Helpers.logs_channel, guild_id, 0, overwrites)
     end)
 
+    create_chat_channel = Task.async(fn ->
+      Logger.info("Recreating chat_channel channel if not exists")
+      with {:ok, %{ id: channel_id }} <- Helpers.create_channel_if_not_exists(Helpers.chat_channel, guild_id, 0) do
+        Helpers.set_channel_rate_limit_per_user(channel_id, 5)
+      else
+        err ->
+          Logger.error("Cannot recreate channel for chat_channel, #{err}")
+          err
+      end
+    end)
+
     create_commands_channel = Task.async(fn ->
-      Logger.info("Recreating commands channel if not exists")
+      Logger.info("Recreating create_commands_channel if not exists")
       with {:ok, %{ id: channel_id }} <- Helpers.create_channel_if_not_exists(Helpers.commands_channel, guild_id, 0) do
         Helpers.set_channel_rate_limit_per_user(channel_id, 5)
       else

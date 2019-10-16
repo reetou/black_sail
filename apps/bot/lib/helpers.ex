@@ -19,6 +19,7 @@ defmodule Bot.Helpers do
   @rules_title "Правила очень простые:"
   @commands_channel "команды"
   @contact_admin_channel "админ-чат"
+  @chat_channel "общий чат"
   @rules_text """
 1. Не быть мудаком
 2. Не оскорблять других людей и их родителей
@@ -58,6 +59,8 @@ defmodule Bot.Helpers do
   def commands_channel, do: @commands_channel
 
   def contact_admin_channel, do: @contact_admin_channel
+
+  def chat_channel, do: @chat_channel
 
   def voice_channel_type, do: 2
 
