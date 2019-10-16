@@ -109,6 +109,14 @@ defmodule Bot.Predicates do
     end
   end
 
+  def is_zae(msg) do
+    unless msg.author.id == 167286153286909952 do
+      {:error, "Этой командой вам пользоваться нельзя"}
+    else
+      :passthrough
+    end
+  end
+
   defp check_expected_channel(%{ channel_id: channel_id, guild_id: guild_id, id: msg_id } = msg, expected_channel) do
     case Converters.to_channel("#{channel_id}", guild_id) do
       {:ok, %{ name: name }} when name == expected_channel -> {:ok, msg}
