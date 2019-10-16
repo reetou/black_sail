@@ -36,6 +36,7 @@ defmodule Bot.Consumer.Ready do
       ## Удалить пустые личные комнаты
       "remove_all_channels" => Cogs.Admin.RemoveAllChannels,
       "remove_all_roles" => Cogs.Admin.RemoveAllRoles,
+      "reinit" => Cogs.Admin.Reinit,
     },
   }
 
@@ -103,88 +104,6 @@ defmodule Bot.Consumer.Ready do
   def handle(data) do
     :ok = load_commands()
     IO.puts("⚡ Logged in and ready, seeing `#{length(data.guilds)}` guilds.")
-    data.guilds
-    |> Enum.map(fn %{ id: guild_id } = guild -> Map.put(guild, :channels, Api.get_guild_channels!(guild_id)) end)
-    |> Enum.each(fn %{ id: guild_id } ->
-
-      Task.start(fn ->
-        with {:ok, channels} <- Api.get_guild_channels(guild_id) do
-          IO.puts("Applying restricted roles\' permissions for channels...")
-          Helpers.apply_permissions_for_infraction_roles(channels, guild_id)
-        else
-          err -> err |> IO.inspect(label: "Cannot get channels for guild #{guild_id}")
-        end
-      end)
-
-      Task.start(fn ->
-        {:ok, role} = Converters.to_role("@everyone", guild_id)
-        opts = [
-          permissions: Nostrum.Permission.to_bitset([
-            :attach_files,
-            :send_messages,
-            :read_message_history,
-            :use_external_emojis,
-            :view_channel,
-            :add_reactions,
-            :speak,
-            :connect,
-          ]),
-        ]
-        IO.puts("Modifying roles for guild #{guild_id}")
-        Api.modify_guild_role(guild_id, role.id, opts)
-      end)
-
-      IO.puts("Ensure that logs channel exists in guild #{guild_id}")
-      Task.start(fn ->
-        {:ok, %{ id: role_id }} = Converters.to_role("@everyone", guild_id)
-        overwrites = [
-          %{
-            id: role_id,
-            type: "role",
-            deny: Permission.to_bit(:view_channel)
-          },
-        ]
-        Helpers.create_channel_if_not_exists(Helpers.logs_channel, guild_id, 0, overwrites)
-      end)
-
-      Task.start(fn ->
-        IO.puts("Recreating commands channel if not exists")
-        with {:ok, %{ id: channel_id }} <- Helpers.create_channel_if_not_exists(Helpers.commands_channel, guild_id, 0) do
-          Helpers.set_channel_rate_limit_per_user(channel_id, 10)
-        else
-          err -> err |> IO.inspect(label: "Cannot recreate channel for COMMANDS")
-        end
-      end)
-
-      Task.start(fn ->
-        IO.puts("Recreate channel for party command in guild #{guild_id}")
-        with {:ok, %{ id: channel_id }} <- Party.recreate_channel(guild_id) do
-          Task.start(fn ->
-            Helpers.set_channel_rate_limit_per_user(channel_id)
-          end)
-        else
-          err -> err |> IO.inspect(label: "Cannot recreate channel FOR PARTY")
-        end
-
-        IO.puts("Recreate channel for register command in guild #{guild_id}")
-        with {:ok, %{ id: channel_id }} <- Register.recreate_channel(guild_id) do
-          Task.start(fn ->
-            Helpers.set_channel_rate_limit_per_user(channel_id, 30)
-          end)
-        else
-          err -> err |> IO.inspect(label: "Cannot recreate channel FOR REGISTER")
-        end
-
-        IO.puts("Recreating rules channel in guild #{guild_id}")
-        Helpers.ensure_rules_message_exists(guild_id)
-
-        IO.puts("Recreating roles for guild #{guild_id}")
-        Register.recreate_roles(guild_id)
-      end)
-
-      IO.inspect(guild_id, label: "Deleting guild game channels")
-      Task.start(fn -> Helpers.delete_game_channels_without_parent(guild_id) end)
-    end)
     :ok = Api.update_status(:online, "Elixir Docs | !help", 3)
   end
 
