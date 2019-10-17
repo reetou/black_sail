@@ -164,7 +164,10 @@ defmodule Bot.Helpers do
           end
         end)
       Api.create_message(reply_channel_id, content: "<@#{user_id}>\n" <> greet_message)
-    else _ -> Logger.error("Cannot greet user")
+    else
+      err ->
+        Logger.error("Cannot greet user")
+        IO.inspect(err, label: "Greet user error")
     end
   end
 

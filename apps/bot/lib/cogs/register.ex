@@ -27,6 +27,7 @@ defmodule Bot.Cogs.Register do
   alias Nostrum.Permission
   alias Guild.Member
   import Embed
+  require Logger
 
   @impl true
   def usage,
@@ -66,6 +67,22 @@ defmodule Bot.Cogs.Register do
     "KDR 5" => [min: 5, max: 5.9, index: 5],
     "KDR 6" => [min: 6, max: 999, index: 6],
   }
+  def elo_roles, do: %{
+    "ELO 1 - 800" => [range: 0..800],
+    "ELO 801 - 950" => [range: 801..950],
+    "ELO 951 - 1100" => [range: 951..1100],
+    "ELO 1101 - 1250" => [range: 1101..1250],
+    "ELO 1251 - 1400" => [range: 1251..1400],
+    "ELO 1401 - 1550" => [range: 1401..1550],
+    "ELO 1551 - 1700" => [range: 1551..1700],
+    "ELO 1701 - 1850" => [range: 1701..1850],
+    "ELO 1851 - 2000" => [range: 1851..2000],
+    "ELO 2001-2300" => [range: 2001..2300],
+    "ELO 2301-2500" => [range: 2301..2500],
+    "ELO 2501-2900" => [range: 2501..2900],
+    "ELO 2901-2999" => [range: 2901..2999],
+    "ELO 3K+" => [range: 3000..10000],
+  }
   def win_rate_roles, do: %{
     "Винрейт 40%" => [range: 40..49 ],
     "Винрейт 50%" => [range: 50..59 ],
@@ -77,7 +94,7 @@ defmodule Bot.Cogs.Register do
   }
 
   def recreate_roles(guild_id) do
-    [kdr_roles, win_rate_roles]
+    [elo_roles, win_rate_roles]
     |> Stream.concat()
     |> Enum.each(fn { role_name, _role_data } -> Helpers.create_role_if_not_exists(role_name, guild_id) end)
   end
@@ -90,6 +107,17 @@ defmodule Bot.Cogs.Register do
            {:max, max} = List.keyfind(role_data, :max, 0)
            {value, _} = Float.parse(kdr)
            value >= min and value <= max
+         end
+       )
+  end
+
+  def elo_role_name(elo) do
+    elo_roles
+    |> Enum.find(
+         fn {role_name, role_data} ->
+           {:range, range} = List.keyfind(role_data, :range, 0)
+           {value, _} = Integer.parse("#{elo}")
+           value in range
          end
        )
   end
@@ -114,6 +142,14 @@ defmodule Bot.Cogs.Register do
 
   def assign_role_for_kdr(kdr, guild_id, user_id) when guild_id != nil and user_id != nil do
     with {role_name, _} <- kdr_role_name(kdr),
+         {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
+      {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
+    end
+  end
+
+  def assign_role_for_elo(elo, guild_id, user_id) when guild_id != nil and user_id != nil do
+    Logger.debug("Getting role name for elo #{elo}")
+    with {role_name, _} <- elo_role_name(elo),
          {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
       {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
     end

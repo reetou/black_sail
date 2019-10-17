@@ -55,14 +55,16 @@ defmodule Bot.FaceIT do
             "leaver" => leaver,
           }
         }
-      } = data} -> data
-#        |> IO.inspect(label: "Data at get user stats")
+      } = data} ->
+        Task.start(fn ->
+          Register.assign_role_for_elo(faceit_elo, guild_id, user_id)
+        end)
         player_afker = if afk > 0, do: "ДА", else: "НЕТ"
         player_leaver = if leaver > 0, do: "ДА", else: "НЕТ"
         embed = %Embed{}
                 |> put_thumbnail(Helpers.get_user_avatar_by_user_id(user_id))
                 |> put_title("#{game_player_name}")
-#                |> put_field("Уровень", skill_level_label)
+                |> put_field("Уровень", skill_level_label)
                 |> put_field("FaceIT Эло", faceit_elo)
 #                |> put_field("Ливер", player_leaver)
 #                |> put_field("АФКер", player_afker)
@@ -107,7 +109,6 @@ defmodule Bot.FaceIT do
         |> put_field("Побед/Всего игр", wins <> "/" <> total_games)
         |> put_field("Средний процент хедшотов", headshots_percents <> "%")
         Task.start(fn -> Register.assign_role_for_win_rate(win_rate, guild_id, user_id) end)
-        Task.start(fn -> Register.assign_role_for_kdr(average_kdr, guild_id, user_id) end)
         embed = if win_streak != "0", do: put_description(embed, "ВИНСТРИК " <> win_streak <> " ИГР"), else: embed
       d ->
         embed
