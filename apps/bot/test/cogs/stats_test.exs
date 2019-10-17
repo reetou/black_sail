@@ -27,7 +27,7 @@ defmodule BotTest.Cogs.Register do
     }
   end
 
-  describe "Register and update" do
+  describe "Register command" do
     test "Register without arguments", context do
       {:ok, channel} = Converters.to_channel(Cogs.Register.stats_channel, context.guild_id)
       msg = %Message{
@@ -86,6 +86,10 @@ defmodule BotTest.Cogs.Register do
         |> Enum.any?(fn id -> id in elo_roles end)
       assert has_elo_role == true
     end
+  end
+
+  describe "Update command" do
+
 
     test "Update with registered nickname", context do
       {:ok, nickname} = Redix.command(:redix, ["HGET", "nicknames", context.user_id])
