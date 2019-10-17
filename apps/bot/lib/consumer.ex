@@ -4,13 +4,17 @@ defmodule Bot.Consumer do
   """
 
   use Nostrum.Consumer
-  alias Nostrum.Struct.Message
+  alias Nostrum.Struct.{
+    Message,
+    User,
+  }
   alias Bot.Consumer.{
     MessageCreate,
     Ready,
     VoiceStateUpdate,
     GuildMemberAdd,
   }
+  alias Nostrum.Cache.Me
   import Nostrum.Api
 
   def start_link do
@@ -22,6 +26,12 @@ defmodule Bot.Consumer do
     unless msg.author.bot do
       IO.inspect(command, label: "Will handle command #{command}")
       MessageCreate.handle(msg)
+    else
+      with %User{} = me <- Me.get,
+           true <- me.id == msg.author.id do
+        IO.inspect(command, label: "Will handle command #{command} FROM MYSELF")
+        MessageCreate.handle(msg)
+      end
     end
   end
   @impl true
