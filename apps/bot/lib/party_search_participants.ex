@@ -14,7 +14,7 @@ defmodule Bot.PartySearchParticipants do
         :invite_code,
         :text_channel_id,
         :comment,
-        :kdr_role,
+        :elo_role,
         :override_index,
       ],
       type: :ordered_set
@@ -40,7 +40,7 @@ defmodule Bot.PartySearchParticipants do
     invite_code: invite_code,
     guild_id: guild_id,
     comment: comment,
-    kdr_role: kdr_role,
+    elo_role: elo_role,
     override_index: override_index,
   } = data) do
     members = Bot.VoiceMembers.get_channel_members(%Bot.VoiceMembers{
@@ -53,7 +53,7 @@ defmodule Bot.PartySearchParticipants do
          msg = Map.put(msg, :content, "!#{Bot.Cogs.Party.command} #{comment}") do
       unless length(members) == 0 do
         Logger.debug("Channel not empty, editing...")
-        %Embed{} = updated_embed = Party.create_party_message(msg, invite, kdr_role, override_index)
+        %Embed{} = updated_embed = Party.create_party_message(msg, invite, elo_role, override_index)
         Api.edit_message!(msg, embed: updated_embed)
       else
         Logger.debug("Deleting empty channel because members are empty")

@@ -68,20 +68,20 @@ defmodule Bot.Cogs.Register do
     "KDR 6" => [min: 6, max: 999, index: 6],
   }
   def elo_roles, do: %{
-    "ELO 1 - 800" => [range: 1..800],
-    "ELO 801 - 950" => [range: 801..950],
-    "ELO 951 - 1100" => [range: 951..1100],
-    "ELO 1101 - 1250" => [range: 1101..1250],
-    "ELO 1251 - 1400" => [range: 1251..1400],
-    "ELO 1401 - 1550" => [range: 1401..1550],
-    "ELO 1551 - 1700" => [range: 1551..1700],
-    "ELO 1701 - 1850" => [range: 1701..1850],
-    "ELO 1851 - 2000" => [range: 1851..2000],
-    "ELO 2001-2300" => [range: 2001..2300],
-    "ELO 2301-2500" => [range: 2301..2500],
-    "ELO 2501-2900" => [range: 2501..2900],
-    "ELO 2901-2999" => [range: 2901..2999],
-    "ELO 3K+" => [range: 3000..10000],
+    "ELO 1 - 800" => [range: 1..800, index: 1],
+    "ELO 801 - 950" => [range: 801..950, index: 2],
+    "ELO 951 - 1100" => [range: 951..1100, index: 3],
+    "ELO 1101 - 1250" => [range: 1101..1250, index: 4],
+    "ELO 1251 - 1400" => [range: 1251..1400, index: 5],
+    "ELO 1401 - 1550" => [range: 1401..1550, index: 6],
+    "ELO 1551 - 1700" => [range: 1551..1700, index: 7],
+    "ELO 1701 - 1850" => [range: 1701..1850, index: 8],
+    "ELO 1851 - 2000" => [range: 1851..2000, index: 9],
+    "ELO 2001-2300" => [range: 2001..2300, index: 10],
+    "ELO 2301-2500" => [range: 2301..2500, index: 11],
+    "ELO 2501-2900" => [range: 2501..2900, index: 12],
+    "ELO 2901-2999" => [range: 2901..2999, index: 13],
+    "ELO 3K+" => [range: 3000..10000, index: 14],
   }
   def win_rate_roles, do: %{
     "Винрейт 40%" => [range: 40..49 ],
@@ -111,7 +111,7 @@ defmodule Bot.Cogs.Register do
        )
   end
 
-  def elo_role_name(elo) do
+  def elo_role(elo) do
     elo_roles
     |> Enum.find(
          fn {role_name, role_data} ->
@@ -171,7 +171,7 @@ defmodule Bot.Cogs.Register do
 
   def assign_role_for_elo(elo, guild_id, user_id) when guild_id != nil and user_id != nil do
     Logger.debug("Getting role name for elo #{elo}")
-    with {role_name, _} <- elo_role_name(elo),
+    with {role_name, _} <- elo_role(elo),
          {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
       remove_other_user_roles_except(role_name, guild_id, user_id)
       {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)

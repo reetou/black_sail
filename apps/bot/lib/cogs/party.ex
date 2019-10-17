@@ -124,28 +124,28 @@ defmodule Bot.Cogs.Party do
     end
   end
 
-  def send_message(%{ channel_id: channel_id, member: member, guild_id: guild_id } = msg, voice_channel_id, restrict_by_kdr \\ false, override_index \\ nil) do
+  def send_message(%{ channel_id: channel_id, member: member, guild_id: guild_id } = msg, voice_channel_id, restrict_by_index \\ false, override_index \\ nil) do
     {:ok, %{ id: everyone_role_id }} = Converters.to_role("@everyone", guild_id)
     invite_task = Task.async(fn -> Api.create_channel_invite!(voice_channel_id, max_age: 1200) end)
-    if restrict_by_kdr == true do
+    if restrict_by_index == true do
       IO.inspect(member.roles, label: "Roles for member")
     end
-    kdr_role = if restrict_by_kdr == true, do: get_kdr_role_name(member.roles, guild_id), else: nil
-    unless kdr_role == nil do
-      Logger.debug("Restrict by kdr enabled, set permissions depending on kdr role: #{kdr_role}.")
-      actual_role_index = get_role_index(kdr_role, override_index)
+    elo_role = if restrict_by_index == true, do: get_elo_role_name(member.roles, guild_id), else: nil
+    unless elo_role == nil do
+      Logger.debug("Restrict by ELO enabled, set permissions depending on ELO role: #{elo_role}.")
+      actual_role_index = get_role_index(elo_role, override_index)
       {:ok} = Api.edit_channel_permissions(voice_channel_id, everyone_role_id, Helpers.deny_speak_and_connect :role)
       set_permissions_by_index(actual_role_index, voice_channel_id, guild_id, override_index, :allow)
       set_permissions_by_index(actual_role_index, voice_channel_id, guild_id, override_index, :deny)
     else
-      Logger.debug("Kdr role is #{if kdr_role == nil, do: "UNKNOWN", else: kdr_role} or restrict by kdr disabled, allowing everyone to connect and speak in channel #{voice_channel_id}")
+      Logger.debug("ELO role is #{if elo_role == nil, do: "UNKNOWN", else: elo_role} or restrict by ELO disabled, allowing everyone to connect and speak in channel #{voice_channel_id}")
       Task.start(fn ->
         set_permissions_for_party_voice_channel(voice_channel_id, guild_id)
 #        {:ok} = Api.edit_channel_permissions(voice_channel_id, everyone_role_id, Helpers.allow_speak_and_connect :role)
       end)
     end
     invite = Task.await(invite_task)
-    reply = Api.create_message!(channel_id, embed: create_party_message(msg, invite, kdr_role, override_index))
+    reply = Api.create_message!(channel_id, embed: create_party_message(msg, invite, elo_role, override_index))
     write_party_message_history(%PartySearchParticipants{
       message_id: reply.id,
       voice_channel_id: voice_channel_id,
@@ -153,7 +153,7 @@ defmodule Bot.Cogs.Party do
       invite_code: invite.code,
       text_channel_id: channel_id,
       comment: extract_comment(msg.content),
-      kdr_role: kdr_role,
+      elo_role: elo_role,
       override_index: override_index,
     })
   end
@@ -163,7 +163,7 @@ defmodule Bot.Cogs.Party do
     PartySearchParticipants.write_party_search_message(data)
   end
 
-  def create_party_message(msg, invite, kdr_role \\ nil, override_index \\ nil) do
+  def create_party_message(msg, invite, elo_role \\ nil, override_index \\ nil) do
     %{
       guild_id: guild_id,
       author: %{
@@ -190,18 +190,24 @@ defmodule Bot.Cogs.Party do
         acc <> "<@#{id}> " <> party_message_roles(roles, guild_id) <> " \n"
       end
     )
-    actual_index = get_role_index(kdr_role, override_index)
+    actual_index = get_role_index(elo_role, override_index)
     index = if actual_index > override_index, do: override_index, else: actual_index
     comment = extract_comment(msg.content)
     invite_text = "\n\nПерейти: https://discord.gg/"
-    embed_description = comment <> "\n" <> embed_description <> invite_text <> invite.code <> get_description_for_kdr(index)
+    embed_description = comment <> "\n" <> embed_description <> invite_text <> invite.code <> get_description_for_index(index)
     embed
     |> put_description(embed_description)
   end
 
-  def get_description_for_kdr(index) when index == nil, do: "\n\nСвободный вход"
-  def get_description_for_kdr(index) do
-    "\n\nУстановлено ограничение на вход по KDR: #{index} и выше"
+  def get_description_for_index(index) when index == nil, do: "\n\nСвободный вход"
+  def get_description_for_index(index) do
+    {role_name, opts} =
+      Register.elo_roles
+      |> Enum.find(fn {name, opts} ->
+        {:index, role_index} = List.keyfind(opts, :index, 0)
+        role_index == index
+      end)
+    "\n\nУстановлено ограничение на вход по ELO: #{role_name} и выше"
   end
 
   defp get_comment(%Embed{} = embed, content) do
@@ -272,7 +278,7 @@ defmodule Bot.Cogs.Party do
   end
 
   def set_permissions_for_party_voice_channel(voice_channel_id, guild_id) do
-    Register.kdr_roles
+    Register.elo_roles
     |> Enum.map(fn role_data ->
       role_data
       |> Tuple.to_list
@@ -312,31 +318,36 @@ defmodule Bot.Cogs.Party do
   end
 
   def set_permissions_for_roles_by_index(role_index, voice_channel_id, guild_id, type) when type == :allow do
-    Register.kdr_roles
-    |> Enum.filter(fn {name, opts} ->
-      {:index, index} = List.keyfind(opts, :index, 0)
-      index >= role_index
-    end)
-    |> Enum.map(fn role_data ->
-      role_data
-      |> Tuple.to_list
-      |> List.first
-    end)
-    |> Enum.map(fn name ->
-      case Converters.to_role(name, guild_id) do
-        {:ok, role} -> role
-        _ -> nil
-      end
-    end)
-    |> Enum.filter(fn r -> r != nil end)
-    |> Enum.each(fn %{id: id, name: name} ->
-      Logger.debug("Allow speak and connect for role #{name} to channel #{voice_channel_id}")
-      Api.edit_channel_permissions(voice_channel_id, id, Helpers.allow_speak_and_connect :role)
-    end)
+    overwrites =
+      Register.elo_roles
+      |> Enum.filter(fn {name, opts} ->
+        {:index, index} = List.keyfind(opts, :index, 0)
+        index >= role_index
+      end)
+      |> Enum.map(fn role_data ->
+        role_data
+        |> Tuple.to_list
+        |> List.first
+      end)
+      |> Enum.map(fn name ->
+        case Converters.to_role(name, guild_id) do
+          {:ok, role} -> role
+          _ -> nil
+        end
+      end)
+      |> Enum.filter(fn r -> r != nil end)
+      |> Enum.map(fn %{id: id, name: name} ->
+        Logger.debug("Allow speak and connect for role #{name} to channel #{voice_channel_id}")
+#        Api.edit_channel_permissions(voice_channel_id, id, Helpers.allow_speak_and_connect :role)
+        Map.put(Helpers.allow_speak_and_connect(:role), :id, id)
+      end)
+    {:ok, channel} = Api.get_channel(voice_channel_id)
+    Logger.debug("Bulk Allow speak and connect to channel #{voice_channel_id}")
+    {:ok, updated_chan} = Api.modify_channel(voice_channel_id, permission_overwrites: channel.permission_overwrites ++ overwrites)
   end
 
   def set_permissions_for_roles_by_index(role_index, voice_channel_id, guild_id, type) when type == :deny do
-    Register.kdr_roles
+    Register.elo_roles
     |> Enum.filter(fn {name, opts} ->
       {:index, index} = List.keyfind(opts, :index, 0)
       index < role_index
@@ -363,28 +374,29 @@ defmodule Bot.Cogs.Party do
     roles
     |> Helpers.get_guild_roles_by_id!(guild_id)
     |> Enum.map(fn %{ name: name } -> name end)
-    |> Enum.filter(fn name -> is_kdr_role?(name) end)
+    |> Enum.filter(fn name -> is_elo_role?(name) end)
     |> Enum.reduce("", fn name, acc -> acc <> name <> " "  end)
   end
 
-  defp is_kdr_role?(name) do
-    kdr_roles_names = Register.kdr_roles
-                      |> Enum.map(&(elem(&1, 0)))
-    name in kdr_roles_names
+  defp is_elo_role?(name) do
+    elo_roles_names =
+      Register.elo_roles
+      |> Enum.map(&(elem(&1, 0)))
+    name in elo_roles_names
   end
 
-  defp is_kdr_role?(name) when name == nil do
+  defp is_elo_role?(name) when name == nil do
     false
   end
 
-  def get_kdr_role_name(roles, guild_id) when roles == nil, do: nil
-  def get_kdr_role_name(roles, guild_id) when is_list(roles) and length(roles) == 0, do: nil
-  def get_kdr_role_name(roles, guild_id) do
+  def get_elo_role_name(roles, guild_id) when roles == nil, do: nil
+  def get_elo_role_name(roles, guild_id) when is_list(roles) and length(roles) == 0, do: nil
+  def get_elo_role_name(roles, guild_id) do
     role =
       roles
       |> Helpers.get_guild_roles_by_id!(guild_id)
       |> IO.inspect(label: "Got roles by ids")
-      |> Enum.filter(fn %{name: name} -> is_kdr_role?(name) end)
+      |> Enum.filter(fn %{name: name} -> is_elo_role?(name) end)
       |> Enum.map(fn r ->
         unless r == nil do
           Map.fetch(r, :name)
@@ -402,11 +414,12 @@ defmodule Bot.Cogs.Party do
   def get_role_index(role_name, override_index \\ nil)
   def get_role_index(role_name, override_index) when role_name == nil, do: nil
   def get_role_index(role_name, override_index) when is_integer(override_index) or override_index == nil do
-    index = Register.kdr_roles
+    index = Register.elo_roles
     |> Enum.find(fn {name, opts} -> name == role_name end)
     |> elem(1)
     |> List.keyfind(:index, 0)
     |> elem(1)
+    |> IO.inspect(label: "Index from current elo role")
     unless override_index == nil do
       index_to_return = if override_index < index, do: override_index, else: index
       Logger.debug("Override index is #{override_index}, origin index is #{index}. If origin index is lower than override, should return override: #{index_to_return}")
@@ -420,7 +433,7 @@ defmodule Bot.Cogs.Party do
   def higher_or_equal_index_roles(role_name, override_index \\ nil) when role_name != nil and is_binary(role_name) do
     role_index = get_role_index(role_name, override_index)
     with true <- role_index != nil do
-      Register.kdr_roles
+      Register.elo_roles
       |> Enum.filter(fn {name, opts} ->
         index = opts
         |> List.keyfind(:index, 0)
@@ -438,7 +451,7 @@ defmodule Bot.Cogs.Party do
   def lower_index_roles(role_name, override_index \\ nil) when role_name != nil and is_binary(role_name) do
     role_index = get_role_index(role_name, override_index)
     with true <- role_index != nil do
-      Register.kdr_roles
+      Register.elo_roles
       |> Enum.filter(fn {name, opts} ->
         index = opts
         |> List.keyfind(:index, 0)
