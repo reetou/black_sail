@@ -44,7 +44,7 @@ defmodule BotTest do
 
     test "Should remove all other elo roles except current", context do
       elo = "800"
-      {role_name, opts} = Cogs.Register.elo_role_name(elo)
+      {role_name, opts} = Cogs.Register.elo_role(elo)
       assert role_name != nil
       Cogs.Register.assign_role_for_elo(elo, context.guild_id, context.user_id)
       Process.sleep(400)
