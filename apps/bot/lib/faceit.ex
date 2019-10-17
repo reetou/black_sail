@@ -25,8 +25,8 @@ defmodule Bot.FaceIT do
 
   def register_user(nickname, user_id, channel_id, guild_id) do
     case get_user_stats(nickname, channel_id, user_id, guild_id) do
-      {:ok, nickname} when is_binary(nickname) -> assign_nickname_to_user_id!(nickname, user_id)
-      _ -> nil
+      {:ok, nickname} when is_binary(nickname) -> assign_nickname_to_user_id(nickname, user_id)
+      _ -> :error
     end
   end
 
@@ -116,9 +116,9 @@ defmodule Bot.FaceIT do
     end
   end
 
-  defp assign_nickname_to_user_id!(nickname, user_id) do
+  defp assign_nickname_to_user_id(nickname, user_id) do
     {:ok, _} = Redix.command(:redix, ["HSET", "nicknames", user_id, nickname])
-    nickname
+    {:ok, nickname}
   end
 
   def get_nickname_by_user_id(user_id) do

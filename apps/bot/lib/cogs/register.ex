@@ -68,7 +68,7 @@ defmodule Bot.Cogs.Register do
     "KDR 6" => [min: 6, max: 999, index: 6],
   }
   def elo_roles, do: %{
-    "ELO 1 - 800" => [range: 0..800],
+    "ELO 1 - 800" => [range: 1..800],
     "ELO 801 - 950" => [range: 801..950],
     "ELO 951 - 1100" => [range: 951..1100],
     "ELO 1101 - 1250" => [range: 1101..1250],
@@ -183,29 +183,15 @@ defmodule Bot.Cogs.Register do
     Helpers.create_channel_if_not_exists(@stats_channel, guild_id, 0, Helpers.special_channel_permission_overwrites(role.id))
   end
 
+  def command(msg, args) when length(args) == 0 do
+    Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>#{usage_text}")
+    :not_enough_arguments
+  end
+
   @impl true
   def command(%{ guild_id: guild_id, author: %{ id: user_id }, channel_id: channel_id, id: msg_id } = msg, args) do
-    nickname = get_nickname_from_message(msg.content)
-    unless nickname == nil do
-      reply = Api.create_message!(channel_id, "Ищу игрока с никнеймом `#{nickname}`...")
-      Task.start(fn ->
-        Bot.FaceIT.register_user(nickname, user_id, channel_id, guild_id)
-        Api.delete_message(channel_id, reply.id)
-      end)
-    else
-      Task.start(fn ->
-        reply = Api.create_message!(channel_id, "<@#{msg.author.id}>#{usage_text}")
-        Process.sleep(4000)
-        Api.delete_message(channel_id, reply.id)
-      end)
-    end
+    nickname = List.first(args)
+    Helpers.reply_and_delete_message(channel_id, "Ищу игрока с никнеймом `#{nickname}`...", 3000)
+    Bot.FaceIT.register_user(nickname, user_id, channel_id, guild_id)
   end
-
-  def get_nickname_from_message(content) do
-    case content do
-      "!#{@command} " <> nickname -> nickname
-      _ -> nil
-    end
-  end
-
 end
