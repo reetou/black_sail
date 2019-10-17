@@ -19,7 +19,7 @@ defmodule Bot.Infractions.Hopper do
   end
 
   def hopper_channels(user_id, guild_id) do
-    {:ok, channels} = Redix.command(:redix, ["LRANGE", list_name_for_user(user_id, guild_id), 0, -1])
+    {:ok, channels} = Redix.command(:redix, ["SMEMBERS", list_name_for_user(user_id, guild_id), 0, -1])
   end
 
   def reason(user_id, guild_id) do
@@ -47,7 +47,7 @@ defmodule Bot.Infractions.Hopper do
 
   def write_history(user_id, channel_id, guild_id) do
     key = list_name_for_user(user_id, guild_id)
-    {:ok, listSize} = Redix.command(:redix, ["RPUSH", key, channel_id])
+    {:ok, listSize} = Redix.command(:redix, ["SADD", key, channel_id])
     {:ok, _} = Redix.command(:redix, ["EXPIRE", key, @expire_seconds])
     handle(user_id, guild_id, listSize)
   end
