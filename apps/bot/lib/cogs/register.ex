@@ -185,7 +185,7 @@ defmodule Bot.Cogs.Register do
 
   def command(msg, args) when length(args) == 0 do
     Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>#{usage_text}")
-    :not_enough_arguments
+    {:error, :not_enough_arguments}
   end
 
   @impl true

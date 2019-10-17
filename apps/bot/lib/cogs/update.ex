@@ -27,6 +27,7 @@ defmodule Bot.Cogs.Update do
   alias Nostrum.Cache.GuildCache
   alias Guild.Member
   import Embed
+  require Logger
 
   @impl true
   def usage,
@@ -56,9 +57,18 @@ defmodule Bot.Cogs.Update do
 
   @impl true
   def command(%{ guild_id: guild_id, author: %{ id: user_id }, id: msg_id, channel_id: channel_id } = msg, _args) do
-    reply = Api.create_message!(channel_id, "Обновляю данные...")
-    Bot.FaceIT.update_user(user_id, channel_id, guild_id)
-    Api.delete_message(channel_id, reply.id)
+    Helpers.reply_and_delete_message(channel_id, "<@#{msg.author.id}>, обновляю данные")
+    case Bot.FaceIT.update_user(user_id, channel_id, guild_id) do
+      {:ok, nickname} when is_binary(nickname) ->
+        Logger.debug("Nickname is #{nickname}")
+        {:ok, nickname}
+      {:error, reason} = err ->
+        Api.create_message(channel_id, reason)
+        err
+      _ ->
+        Logger.error("Unknown error")
+        {:error, :unknown_error}
+    end
   end
 
 end

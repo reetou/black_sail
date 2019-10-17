@@ -10,7 +10,7 @@ defmodule BotTest.Cogs.Register do
     Helpers,
     Cogs,
     Consumer,
-    }
+  }
   require Logger
   alias Nosedrum.Converters
 
@@ -27,7 +27,7 @@ defmodule BotTest.Cogs.Register do
     }
   end
 
-  describe "Register command" do
+  describe "Register and update" do
     test "Register without arguments", context do
       {:ok, channel} = Converters.to_channel(Cogs.Register.stats_channel, context.guild_id)
       msg = %Message{
@@ -39,7 +39,7 @@ defmodule BotTest.Cogs.Register do
         content: "!" <> Cogs.Register.command
       }
       result = Cogs.Register.command(msg, [])
-      assert result == :not_enough_arguments
+      assert result == {:error, :not_enough_arguments}
     end
 
     test "Register with nickname", context do
@@ -86,5 +86,37 @@ defmodule BotTest.Cogs.Register do
         |> Enum.any?(fn id -> id in elo_roles end)
       assert has_elo_role == true
     end
+
+    test "Update with registered nickname", context do
+      {:ok, nickname} = Redix.command(:redix, ["HGET", "nicknames", context.user_id])
+      {:ok, channel} = Converters.to_channel(Cogs.Register.stats_channel, context.guild_id)
+      msg = %Message{
+        channel_id: channel.id,
+        guild_id: context.guild_id,
+        author: %{
+          id: context.user_id,
+        },
+        content: "!" <> Cogs.Update.command
+      }
+      result = Cogs.Update.command(msg, [])
+      assert result == {:ok, nickname}
+    end
+
+
+    test "Update without nickname", context do
+      {:ok, _} = Redix.command(:redix, ["HDEL", "nicknames", context.user_id])
+      {:ok, channel} = Converters.to_channel(Cogs.Register.stats_channel, context.guild_id)
+      msg = %Message{
+        channel_id: channel.id,
+        guild_id: context.guild_id,
+        author: %{
+          id: context.user_id,
+        },
+        content: "!" <> Cogs.Update.command
+      }
+      result = Cogs.Update.command(msg, [])
+      assert result == {:error, "<@#{context.user_id}>, бот не смог найти ваш никнейм. Повторите регистрацию"}
+    end
   end
+
 end

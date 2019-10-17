@@ -32,9 +32,9 @@ defmodule Bot.FaceIT do
 
   def update_user(user_id, channel_id, guild_id) do
     with nickname when is_binary(nickname) <- get_nickname_by_user_id(user_id) do
-      {:ok, _} = get_user_stats(nickname, channel_id, user_id, guild_id)
+      get_user_stats(nickname, channel_id, user_id, guild_id)
     else err ->
-      Api.create_message!(channel_id, "<@#{user_id}>, бот не смог найти ваш никнейм. Повторите регистрацию")
+      {:error, "<@#{user_id}>, бот не смог найти ваш никнейм. Повторите регистрацию"}
     end
   end
 
@@ -73,18 +73,24 @@ defmodule Bot.FaceIT do
         Api.create_message!(channel_id, embed: embed)
         {:ok, nickname}
       {:ok, %{ status_code: 200, body: %{ "games" => games } }} when map_size(games) == 0 ->
-        Api.create_message!(channel_id, "У игрока с ником #{nickname} нет игр в FaceIT. Перепроверьте введенный никнейм")
+        {:error, "У игрока с ником #{nickname} нет игр в FaceIT. Перепроверьте введенный никнейм"}
       {:ok, %{ status_code: 200, body: %{ "games" => %{ "csgo" => game } } }} when game == nil ->
-        Api.create_message!(channel_id, "У игрока с ником #{nickname} нет игры CS:GO в FaceIT. Перепроверьте введенный никнейм и удостоверьтесь, что в FaceIT добавлена CS:GO")
-      {:ok, %{ status_code: 404 }} -> Api.create_message!(channel_id, "Не найден игрок с никнеймом #{nickname}")
-      {:ok, %{ status_code: 401 }} -> Api.create_message!(channel_id, "Не удалось подключиться к FaceIT API. Сообщите администрации")
-      {:ok, %{ status_code: 500 }} -> Api.create_message!(channel_id, "Произошла ошибка на сервере FaceIT API. Попробуйте позднее")
-      {:ok, %{ status_code: 429 }} -> Api.create_message!(channel_id, "Слишком много запросов от бота к FaceIT API. Попробуйте позднее")
-      {:ok, %{ status_code: 503 }} -> Api.create_message!(channel_id, "Сервис FaceIT API временно недоступен. Попробуйте позднее")
+        {:error, "У игрока с ником #{nickname} нет игры CS:GO в FaceIT. Перепроверьте введенный никнейм и удостоверьтесь, что в FaceIT добавлена CS:GO"}
+      {:ok, %{ status_code: 404 }} ->
+        {:error, "Не найден игрок с никнеймом #{nickname}"}
+      {:ok, %{ status_code: 401 }} ->
+        {:error, "Не удалось подключиться к FaceIT API. Сообщите администрации"}
+      {:ok, %{ status_code: 500 }} ->
+        {:error, "Произошла ошибка на сервере FaceIT API. Попробуйте позднее"}
+      {:ok, %{ status_code: 429 }} ->
+        {:error, "Слишком много запросов от бота к FaceIT API. Попробуйте позднее"}
+      {:ok, %{ status_code: 503 }} ->
+        {:error, "Сервис FaceIT API временно недоступен. Попробуйте позднее"}
       {:ok, z} ->
         IO.inspect(z, label: "Data for unknown err")
-        Api.create_message!(channel_id, "Неизвестная ошибке при поиске игрока с никнеймом #{nickname}")
-      {:error, %{ reason: reason }} -> Api.create_message!(channel_id, "Не удалось найти игрока с никнеймом #{nickname}: #{reason}")
+        {:error, "Неизвестная ошибке при поиске игрока с никнеймом #{nickname}"}
+      {:error, %{ reason: reason }} ->
+        {:error, "Не удалось найти игрока с никнеймом #{nickname}: #{reason}"}
     end
   end
 
@@ -123,7 +129,7 @@ defmodule Bot.FaceIT do
 
   def get_nickname_by_user_id(user_id) do
     case Redix.command(:redix, ["HGET", "nicknames", user_id]) do
-      {:ok, nickname} when nickname != nil -> nickname
+      {:ok, nickname} when is_binary(nickname) -> nickname
       _ -> nil
     end
   end
