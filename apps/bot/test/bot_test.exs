@@ -28,7 +28,7 @@ defmodule BotTest do
     end
   end
 
-  describe "Assign roles by stats" do
+  describe "Assign roles by elo" do
 
     test "Assign role for elo", context do
       elo = "3000"
