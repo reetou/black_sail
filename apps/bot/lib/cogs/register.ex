@@ -147,10 +147,33 @@ defmodule Bot.Cogs.Register do
     end
   end
 
+  def other_elo_role_names_except(role_name) do
+    elo_roles
+    |> Enum.filter(fn {name, opts} -> name !== role_name end)
+    |> Enum.map(fn {name, opts} -> name end)
+  end
+
+  def remove_other_user_roles_except(role_name, guild_id, user_id) do
+    case Api.get_guild_member(guild_id, user_id) do
+      {:ok, member} ->
+        other_elo_role_names_except(role_name)
+        |> Enum.map(fn name ->
+          with {:ok, role} <- Converters.to_role(name, guild_id),
+               true <- role.id in member.roles do
+            {:ok} = Api.remove_guild_member_role(guild_id, user_id, role.id, "Replacing with #{role_name}")
+          else _ -> nil
+          end
+        end)
+        :ok
+      err -> err
+    end
+  end
+
   def assign_role_for_elo(elo, guild_id, user_id) when guild_id != nil and user_id != nil do
     Logger.debug("Getting role name for elo #{elo}")
     with {role_name, _} <- elo_role_name(elo),
          {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
+      remove_other_user_roles_except(role_name, guild_id, user_id)
       {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
     end
   end
