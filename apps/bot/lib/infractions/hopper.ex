@@ -9,7 +9,7 @@ defmodule Bot.Infractions.Hopper do
   @prefix "hoppers"
   @expire_seconds 15
   @role_name "Войс мут"
-  @infraction_length_seconds 180
+  @infraction_length_seconds 120
 
   def role_name, do: @role_name
 
@@ -19,7 +19,7 @@ defmodule Bot.Infractions.Hopper do
   end
 
   def hopper_channels(user_id, guild_id) do
-    {:ok, channels} = Redix.command(:redix, ["SMEMBERS", list_name_for_user(user_id, guild_id), 0, -1])
+    {:ok, channels} = Redix.command(:redix, ["SMEMBERS", list_name_for_user(user_id, guild_id)])
   end
 
   def reason(user_id, guild_id) do
@@ -34,6 +34,7 @@ defmodule Bot.Infractions.Hopper do
     %{ name: name } = Nostrum.Cache.GuildCache.get!(guild_id)
     """
 Привет. Ты получил **войсмут** на сервере **#{name}**, потому что слишком часто прыгал по каналам. Если таким образом ты искал себе пати, то лучше пользуйся каналом **поиск**
+
 Войсмут спадет через #{@infraction_length_seconds / 60} минут. Если ты получил войсмут по ошибке, напиши в **админ-чат** на сервере и не забудь написать, что тебе выдали войсмут по ошибке.
 
 Имей в виду, что в админ-чате очень высокий слоумод, поэтому напиши все одним сообщением.
@@ -47,9 +48,10 @@ defmodule Bot.Infractions.Hopper do
 
   def write_history(user_id, channel_id, guild_id) do
     key = list_name_for_user(user_id, guild_id)
-    {:ok, listSize} = Redix.command(:redix, ["SADD", key, channel_id])
+    {:ok, _added} = Redix.command(:redix, ["SADD", key, channel_id])
     {:ok, _} = Redix.command(:redix, ["EXPIRE", key, @expire_seconds])
-    handle(user_id, guild_id, listSize)
+    {:ok, chans} = hopper_channels(user_id, guild_id)
+    handle(user_id, guild_id, length(chans))
   end
 
   defp handle(user_id, guild_id, size) do
