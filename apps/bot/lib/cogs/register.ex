@@ -172,9 +172,12 @@ defmodule Bot.Cogs.Register do
   def assign_role_for_elo(elo, guild_id, user_id) when guild_id != nil and user_id != nil do
     Logger.debug("Getting role name for elo #{elo}")
     with {role_name, _} <- elo_role(elo),
-         {:ok, %{ id: role_id }} <- Converters.to_role(role_name, guild_id) do
+         {:ok, %{ id: role_id } = role} <- Converters.to_role(role_name, guild_id) do
       remove_other_user_roles_except(role_name, guild_id, user_id)
       {:ok} = Api.add_guild_member_role(guild_id, user_id, role_id)
+      {:ok, role}
+    else
+      _ -> {:error}
     end
   end
 

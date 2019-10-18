@@ -81,8 +81,10 @@ defmodule Bot.Cogs.Party do
 
   @impl true
   def command(%{ guild_id: guild_id, member: member, channel_id: channel_id } = msg, _args) do
-    with {:ok, voice_channel_id} when voice_channel_id != nil <- ensure_user_in_voice_channel(msg) do
-      send_message(msg, voice_channel_id)
+    case ensure_user_in_voice_channel(msg) do
+      {:ok, voice_channel_id} when is_number(voice_channel_id) ->
+        send_message(msg, voice_channel_id)
+      err -> err
     end
   end
 
@@ -91,11 +93,13 @@ defmodule Bot.Cogs.Party do
       case CustomPredicates.in_own_voice_channel(msg) do
         :passthrough ->
           voice_channel_id = Bot.VoiceMembers.get_channel_id_by_user_id(msg.author.id)
-          if voice_channel_id == nil do
+          unless voice_channel_id == nil do
+            {:ok, voice_channel_id}
+          else
             response = "Что-то пошло не так. <@#{msg.author.id}>, пожалуйста, введите команду заново"
             Task.start(fn -> Api.create_message!(channel_id, response) end)
+            {:error, :no_voice_channel_id}
           end
-          {:ok, voice_channel_id}
         {:error, reason} = result ->
           Helpers.reply_and_delete_message(channel_id, reason, 15000)
           result
@@ -120,7 +124,7 @@ defmodule Bot.Cogs.Party do
             )
           end
         )
-        :ignored
+        {:ok, :created_voice_channel}
     end
   end
 
@@ -156,6 +160,11 @@ defmodule Bot.Cogs.Party do
       elo_role: elo_role,
       override_index: override_index,
     })
+    unless elo_role == nil do
+      {:ok, :restricted_enter}
+    else
+      {:ok, :free_enter}
+    end
   end
 
   def write_party_message_history(%PartySearchParticipants{ voice_channel_id: voice_channel_id, guild_id: guild_id } = data) do
@@ -237,7 +246,7 @@ defmodule Bot.Cogs.Party do
     "<@#{user_id}>: Player"
   end
 
-  defp create_voice_channel_for_member(guild_id, username, user_id) do
+  def create_voice_channel_for_member(guild_id, username, user_id) do
     %Channel{} = parent_category = get_or_create_parent_category(guild_id)
     %{id: id} = Api.create_guild_channel!(guild_id, [
       name: get_channel_name_for_member(username),
