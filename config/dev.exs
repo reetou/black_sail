@@ -58,3 +58,10 @@ config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
+
+
+config :bot, Bot.Scheduler,
+       jobs: [
+         # Every minute
+         {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
+       ]
