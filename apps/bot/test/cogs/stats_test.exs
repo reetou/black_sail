@@ -92,6 +92,8 @@ defmodule BotTest.Cogs.Register do
 
 
     test "Update with registered nickname", context do
+      Process.sleep(2000)
+      IO.inspect(context.user_id, label: "Gonna get nickname from redis for user id")
       {:ok, nickname} = Redix.command(:redix, ["HGET", "nicknames", context.user_id])
       {:ok, channel} = Converters.to_channel(Cogs.Register.stats_channel, context.guild_id)
       msg = %Message{
