@@ -184,10 +184,7 @@ defmodule Bot.Cogs.Room do
     channels
     |> Enum.map(fn {id, %{name: name}} -> name end)
     |> IO.inspect(label: "Channels in guild #{guild_id}")
-    parent = channels
-             |> Enum.map(fn t -> elem(t, 1) end)
-             |> Enum.filter(fn %{type: type} -> type == 4 end)
-             |> Enum.find(fn %{name: name} -> name == @category_name end)
+    parent = get_or_create_parent_category(guild_id)
     case parent do
       %Channel{} ->
         deleted_channels =
@@ -232,6 +229,9 @@ defmodule Bot.Cogs.Room do
           end)
         end
       result ->
+        Task.start(fn ->
+          Bot.Infractions.send_to_log("Ошибка при чистке каналов", guild_id)
+        end)
         result
         |> IO.inspect(label: "Cannot find parent")
     end
