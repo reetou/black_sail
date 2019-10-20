@@ -54,10 +54,13 @@ defmodule Bot.Cogs.Elo do
     unless elo_role == nil do
       with {:ok, voice_channel_id} when voice_channel_id != nil <- Party.ensure_user_in_voice_channel(msg) do
         Party.send_message(msg, voice_channel_id, elo_role != nil)
+      else
+        _ -> {:error, :no_voice_channel}
       end
     else
       response = "<@#{msg.author.id}>, не удалось получить данные о вашем ELO. У вас точно есть роль ELO?"
       Helpers.reply_and_delete_message(msg.channel_id, response, 20000)
+      {:error, response}
     end
   end
 

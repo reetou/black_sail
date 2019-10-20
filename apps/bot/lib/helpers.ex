@@ -402,12 +402,10 @@ defmodule Bot.Helpers do
       case channel.name do
         x when x == personal_channel_name -> {:ok, channel}
         x when x == party_channel_name -> {:ok, channel}
-        _ -> {:error, :other}
+        _ -> {:error, :not_in_own_channel}
       end
     else
-      z ->
-        IO.inspect(z, label: "Something totally wrong on kick")
-        nil
+      z -> {:error, :not_in_own_channel}
     end
   end
 end

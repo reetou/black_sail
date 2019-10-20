@@ -88,37 +88,74 @@ defmodule Bot.Cogs.Kick do
 
   def command(msg, args) when length(args) == 0 do
     Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, эта команда должна быть вызвана с аргументами. Пример: #{List.first(usage)}", 15000)
+    {:error, :not_enough_arguments}
   end
 
   @impl true
-  def command(%Message{ guild_id: guild_id, channel_id: reply_channel_id, author: %{ username: username, discriminator: discriminator } } = msg, args) do
-    with {:ok, %{ id: everyone_role_id }} <- Converters.to_role("@everyone", guild_id),
-         {:ok, %Channel{}} <- Room.get_personal_channel(guild_id, username <> "#" <> discriminator) do
-      channel_to_kick_from = get_channel_to_kick_from(msg.author.id, guild_id, reply_channel_id)
-      unless channel_to_kick_from == nil do
-        Room.get_overwrites_ids_from_args(guild_id, args, :member, :deny)
-        |> Enum.each(fn %{id: overwrite_id, type: type, deny: deny} ->
-          Task.start(fn ->
-            {:ok} = Api.edit_channel_permissions(channel_to_kick_from.id, overwrite_id, %{ type: type, deny: deny })
-                    |> IO.inspect(label: "EDITED CHANNEL PERMISSIONS")
-            if type == "member" and Bot.VoiceMembers.get_channel_id_by_user_id(overwrite_id) == channel_to_kick_from.id do
-              Logger.debug("Kicking user from channel because he is there")
-              Api.modify_guild_member(guild_id, overwrite_id, %{ channel_id: nil })
-            else
-              Logger.debug("Type: #{type} and probably not in that voice channel: #{Bot.VoiceMembers.get_channel_id_by_user_id(overwrite_id)}")
-            end
-          end)
-        end)
-        Helpers.reply_and_delete_message(reply_channel_id, success_message(channel_to_kick_from, msg), 60000)
-      else
-        Logger.debug("No channel to kick from")
+  def command(
+        %Message{
+          guild_id: guild_id,
+          channel_id: reply_channel_id,
+          author: %{
+            username: username,
+            discriminator: discriminator
+          }
+        } = msg,
+        args
+      ) do
+    with {:ok, %{id: everyone_role_id}} <- Converters.to_role("@everyone", guild_id),
+         {:ok, %Channel{}} <- Room.get_personal_channel(guild_id, username <> "#" <> discriminator),
+         {:ok, %Channel{} = channel_to_kick_from} <- Helpers.get_user_current_personal_or_party_voice_channel(msg.author.id, guild_id) do
+      case Helpers.get_user_current_personal_or_party_voice_channel(msg.author.id, guild_id) do
+        {:ok, %Channel{} = channel_to_kick_from} ->
+          Room.get_overwrites_ids_from_args(guild_id, args, :member, :deny)
+          |> Enum.each(
+               fn %{id: overwrite_id, type: type, deny: deny} ->
+                 Task.start(
+                   fn ->
+                     {:ok} =
+                       Api.edit_channel_permissions(
+                         channel_to_kick_from.id,
+                         overwrite_id,
+                         %{type: type, deny: deny}
+                       )
+                       |> IO.inspect(label: "EDITED CHANNEL PERMISSIONS")
+                     if type == "member" and Bot.VoiceMembers.get_channel_id_by_user_id(
+                       overwrite_id
+                     ) == channel_to_kick_from.id do
+                       Logger.debug("Kicking user from channel because he is there")
+                       Api.modify_guild_member(guild_id, overwrite_id, %{channel_id: nil})
+                     else
+                       Logger.debug(
+                         "Type: #{type} and probably not in that voice channel: #{
+                           Bot.VoiceMembers.get_channel_id_by_user_id(overwrite_id)
+                         }"
+                       )
+                     end
+                   end
+                 )
+               end
+             )
+          Helpers.reply_and_delete_message(reply_channel_id, success_message(channel_to_kick_from, msg), 60000)
+          {:ok}
+        err -> err
       end
     else
       err ->
         IO.inspect(err, label: "ADD COMMAND: Cannot get channels for guild #{guild_id}")
         case err do
-          {:error, :no_channel} -> Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, личный канал отсутствует, начните с его создания: !#{Room.command}", 15000)
-          _ -> Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, не получилось отредактировать канал. Обратитесь к админам")
+          {:error, :not_in_own_channel} = res ->
+            response = "<@#{msg.author.id}>, для использования команды нужно находиться в личном голосовом канале"
+            Helpers.reply_and_delete_message(reply_channel_id, response, 15000)
+            res
+          {:error, :no_channel} = res ->
+            response = "<@#{msg.author.id}>, личный канал отсутствует, начните с его создания: !#{Room.command}"
+            Helpers.reply_and_delete_message(reply_channel_id, response, 15000)
+            res
+          err ->
+            response = "<@#{msg.author.id}>, не получилось отредактировать канал. Обратитесь к админам"
+            Helpers.reply_and_delete_message(reply_channel_id, response)
+            {:error, :unknown_error}
         end
     end
   end
@@ -141,12 +178,14 @@ defmodule Bot.Cogs.Kick do
 
   defp get_channel_to_kick_from(user_id, guild_id, text_channel_id) do
     case Helpers.get_user_current_personal_or_party_voice_channel(user_id, guild_id) do
-      {:ok, channel} -> channel
-      {:error, :other} ->
+      {:ok, channel} = res -> res
+      {:error, :not_in_own_channel} = res ->
         response = "<@#{user_id}>, Вы находитесь не в личном и не в канале вашей пати, потому не можете кикать"
         Helpers.reply_and_delete_message(text_channel_id, response)
-        nil
-      z -> IO.inspect(label: "In ensure")
+        res
+      z ->
+        z
+        |> IO.inspect(label: "In ensure")
     end
   end
 end

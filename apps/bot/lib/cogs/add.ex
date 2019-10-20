@@ -70,6 +70,7 @@ defmodule Bot.Cogs.Add do
 
   def command(msg, args) when length(args) == 0 do
     Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, эта команда должна быть вызвана с аргументами. Пример: #{List.first(usage)}", 15000)
+    {:error, :not_enough_arguments}
   end
 
   @impl true
@@ -87,12 +88,17 @@ defmodule Bot.Cogs.Add do
       Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, йоу, комната отредактирована, делаю инвайт...", 5000)
       invite = Task.await(create_invite_task)
       Helpers.reply_and_delete_message(reply_channel_id, success_message(invite, msg), 15000)
+      {:ok}
     else
       err ->
         IO.inspect(err, label: "ADD COMMAND: Cannot get channels for guild #{guild_id}")
         case err do
-          {:error, :no_channel} -> Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, личный канал отсутствует, начните с его создания: !#{Room.command}", 15000)
-          _ -> Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, не получилось отредактировать канал. Обратитесь к админам")
+          {:error, :no_channel} = res ->
+            Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, личный канал отсутствует, начните с его создания: !#{Room.command}", 15000)
+            res
+          _ ->
+            Helpers.reply_and_delete_message(reply_channel_id, "<@#{msg.author.id}>, не получилось отредактировать канал. Обратитесь к админам")
+            {:error, :unknown_error}
         end
     end
   end

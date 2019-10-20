@@ -75,7 +75,7 @@ defmodule Bot.Cogs.Room do
          {:ok, %{ id: everyone_role_id }} <- Converters.to_role("@everyone", guild_id) do
       overwrites = [
         %{id: everyone_role_id, type: "role", deny: Permission.to_bitset([:connect, :speak])},
-        %{id: msg.author.id, type: "member", allow: Permission.to_bitset([:connect, :speak])}
+        %{id: msg.author.id, type: "member", allow: Permission.to_bitset([:connect, :speak, :mute_members, :deafen_members, :move_members])}
       ]
         channel_name = channel_name_for_user(username <> "#" <> discriminator)
         %Channel{id: parent_id} = get_or_create_parent_category(guild_id)
@@ -98,10 +98,12 @@ defmodule Bot.Cogs.Room do
         Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, йоу, комната создана, делаю инвайт...", 5000)
         invite = Task.await(create_invite_task)
         Helpers.reply_and_delete_message(msg.channel_id, success_message(invite, msg), 15000)
+        {:ok, created_channel}
     else
       err ->
         IO.inspect(err, label: "Cannot get channels for guild #{guild_id}")
         Helpers.reply_and_delete_message(channel_id, "Не получилось создать канал. Обратитесь к админам")
+        {:error, :unknown_error}
     end
   end
 
