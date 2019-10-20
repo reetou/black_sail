@@ -31,7 +31,7 @@ defmodule Bot.Cogs.Elo do
       Выведет Embed-сообщение:
 
       Поиск Competitive FaceIT
-      @username KDA 2
+      @username ELO 1-800
 
       Коммент: Предпочитаю играть с любителями народных песен
 
