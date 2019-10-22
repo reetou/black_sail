@@ -37,7 +37,7 @@ config :bot, Bot.Scheduler,
          # Every minute
          {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
          {"@daily", {Bot.Cogs.Room, :remove_personal_channels, []}},
-         {"0 * * * *", {Bot.Cogs.Admin.Stats, :stats_for_servers, []}},
+         {"@daily", {Bot.Cogs.Admin.Stats, :stats_for_servers, []}},
        ]
 
 
