@@ -70,6 +70,7 @@ defmodule Bot.FaceIT do
 #                |> put_field("АФКер", player_afker)
                 |> put_cs_go_stats(player_id, user_id, guild_id)
                 |> put_color(0x9768d1)
+                |> put_footer("Для получения своей статистики введи !register или !update")
         Api.create_message!(channel_id, embed: embed)
         {:ok, nickname}
       {:ok, %{ status_code: 200, body: %{ "games" => games } }} when map_size(games) == 0 ->
