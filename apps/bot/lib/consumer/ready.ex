@@ -105,7 +105,6 @@ defmodule Bot.Consumer.Ready do
     :ok = load_commands()
     IO.puts("⚡ Logged in and ready, seeing `#{length(data.guilds)}` guilds.")
     :ok = Api.update_status(:online, "Elixir Docs | !help", 3)
-    Bot.Cogs.Admin.Stats.stats_for_servers
   end
 
   defp load_commands do
