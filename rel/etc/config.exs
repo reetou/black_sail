@@ -33,6 +33,7 @@ config :nosedrum,
 
 config :bot, Bot.Scheduler,
        timezone: "Europe/Moscow",
+       global: true,
        jobs: [
          # Every minute
          {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
