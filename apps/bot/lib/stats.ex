@@ -100,11 +100,11 @@ defmodule Bot.Stats do
     joins = Mongo.aggregate(:mongo, "joins", pipeline(guild_id, type))
            |> Enum.to_list()
            |> IO.inspect(label: "Data main")
-           |> stats_to_highcharts_data("Приход пользователей", type)
+           |> stats_to_highcharts_data("Пришло", type)
     leaves = Mongo.aggregate(:mongo, "leaves", pipeline(guild_id, type))
            |> Enum.to_list()
            |> IO.inspect(label: "Data main")
-           |> stats_to_highcharts_data("Уход пользователей", type)
+           |> stats_to_highcharts_data("Ушло", type)
     [joins, leaves]
   end
 

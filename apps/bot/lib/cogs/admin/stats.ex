@@ -40,9 +40,9 @@ defmodule Bot.Cogs.Admin.Stats do
   @impl true
   def usage,
       do: [
-        "!#{@command} год",
-        "!#{@command} месяц",
-        "!#{@command} неделя",
+        "!#{@command} year",
+        "!#{@command} month",
+        "!#{@command} week",
       ]
 
   @impl true
@@ -63,14 +63,14 @@ defmodule Bot.Cogs.Admin.Stats do
   def command(msg, args) when length(args) > 0 do
     IO.inspect(msg.guild_id, label: "Guild id")
     case List.first(args) do
-      "год" -> stats(msg.guild_id, :year, msg.channel_id)
-      "месяц" -> stats(msg.guild_id, :month, msg.channel_id)
+      "year" -> stats(msg.guild_id, :year, msg.channel_id)
+      "month" -> stats(msg.guild_id, :month, msg.channel_id)
       _ -> Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, неизвестный тип статистики")
     end
   end
 
   def command(msg, _args) do
-    Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, нужно указать тип статистики: год или месяц", 20000)
+    Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, нужно указать тип статистики: year или month", 20000)
   end
 
   def stats(guild_id, type, channel_id) when type == :month do
@@ -81,6 +81,7 @@ defmodule Bot.Cogs.Admin.Stats do
 #      async: true,
 #      noDownload: true,
       type: "png",
+      scale: 3,
       infile: %{
         chart: %{
           type: "areaspline",
@@ -91,13 +92,14 @@ defmodule Bot.Cogs.Admin.Stats do
           align: "left",
           verticalAlign: "top",
           x: 50,
-          y: 50,
+          y: 80,
           floating: true,
-          borderWidth: 1,
-          backgroundColor: "#414246",
+          borderWidth: 0,
+          borderRadius: 10,
+          backgroundColor: "#202225",
           plotBackgroundColor: "#333666",
           itemStyle: %{
-            color: "#E7E8E8",
+            color: "#FFF",
           },
         },
         labels: %{
@@ -111,13 +113,35 @@ defmodule Bot.Cogs.Admin.Stats do
             color: "#E7E8E8",
           },
         },
-        xAxis: %{
-          categories: Stats.categories(type)
+        subtitle: %{
+          text: "Бот записывает каждый вход/выход пользователя с сервера",
+          style: %{
+            color: "#E7E8E8",
+          },
         },
         xAxis: %{
           title: %{
-            text: "Пришло/ушло"
-          }
+            text: "День месяца",
+            style: %{
+              color: "#E7E8E8",
+              fontWeight: "bold",
+            },
+          },
+          labels: %{
+            style: %{
+              color: "#E7E8E8",
+            },
+          },
+          categories: Stats.categories(type),
+        },
+        yAxis: %{
+          title: %{
+            text: "Уникальных пользователей",
+            style: %{
+              color: "#E7E8E8",
+              fontWeight: "bold",
+            },
+          },
         },
         credits: %{ enabled: false },
         colors: ["#43B581", "#F04747"],
