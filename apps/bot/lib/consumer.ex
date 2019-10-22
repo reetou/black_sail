@@ -13,6 +13,7 @@ defmodule Bot.Consumer do
     Ready,
     VoiceStateUpdate,
     GuildMemberAdd,
+    GuildMemberRemove,
   }
   alias Nostrum.Cache.Me
   import Nostrum.Api
@@ -55,6 +56,11 @@ defmodule Bot.Consumer do
   @impl true
   def handle_event({:GUILD_MEMBER_ADD, { guild_id, _member } = data, _ws_state}) do
     GuildMemberAdd.handle(data)
+  end
+
+  @impl true
+  def handle_event({:GUILD_MEMBER_REMOVE, { guild_id, _member } = data, _ws_state}) do
+    GuildMemberRemove.handle(data)
   end
 
   def handle_event(_other) do

@@ -5,6 +5,7 @@ defmodule Bot.Application do
   """
   require Logger
   use Application
+  import Application
 
   @impl true
   def start(_type, _args) do
@@ -18,6 +19,13 @@ defmodule Bot.Application do
         password: Application.fetch_env!(:bot, :redis_password),
         name: :redix
       },
+      worker(Mongo, [
+        [
+          name: :mongo,
+          url: "mongodb+srv://#{fetch_env!(:bot, :mongo_username)}:#{fetch_env!(:bot, :mongo_password)}@#{fetch_env!(:bot, :mongo_host)}/#{fetch_env!(:bot, :mongo_database)}?retryWrites=true&w=majority",
+          pool_size: 3,
+        ]
+      ]),
       Nosedrum.Storage.ETS,
       # Supervises Discord Gateway event consumers.
       Bot.ConsumerSupervisor,

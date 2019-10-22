@@ -230,11 +230,11 @@ defmodule Bot.Helpers do
     end
   end
 
-  def create_channel_if_not_exists(channel_name, guild_id, type \\ 0, permission_overwrites \\ []) do
+  def create_channel_if_not_exists(channel_name, guild_id, type \\ 0, permission_overwrites \\ [], topic \\ "") do
     overwrites = permission_overwrites ++ mee6_permissions_overwrites(guild_id)
     case Converters.to_channel(channel_name, guild_id) do
       {:error, _} ->
-        Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: overwrites)
+        Api.create_guild_channel(guild_id, name: channel_name, type: type, permission_overwrites: overwrites, topic: topic)
       {:ok, %{ id: id }} -> Api.modify_channel(id, permission_overwrites: overwrites, type: type, name: channel_name)
     end
   end
@@ -408,4 +408,21 @@ defmodule Bot.Helpers do
       z -> {:error, :not_in_own_channel}
     end
   end
+
+  def write_leave(guild_id, user_id) do
+    Mongo.insert_one(:mongo, "leaves", %{
+      user_id: user_id,
+      date: DateTime.utc_now,
+      guild_id: guild_id
+    })
+  end
+
+  def write_join(guild_id, user_id) do
+    Mongo.insert_one(:mongo, "joins", %{
+      user_id: user_id,
+      date: DateTime.utc_now,
+      guild_id: guild_id
+    })
+  end
+
 end

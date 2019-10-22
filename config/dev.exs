@@ -21,7 +21,12 @@ config :bot,
        faceit_api_key: System.get_env("FACEIT_API_KEY"),
        redis_host: System.get_env("REDIS_HOST"),
        redis_port: System.get_env("REDIS_PORT"),
-       redis_password: System.get_env("REDIS_PASSWORD")
+       redis_password: System.get_env("REDIS_PASSWORD"),
+       mongo_username: System.get_env("MONGO_USERNAME"),
+       mongo_password: System.get_env("MONGO_PASSWORD"),
+       mongo_host: System.get_env("MONGO_HOST"),
+       mongo_database: System.get_env("MONGO_DATABASE"),
+       stats_server_url: "http://localhost:7801"
 
 config :phoenix, :json_library, Jason
 

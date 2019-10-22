@@ -37,6 +37,7 @@ config :bot, Bot.Scheduler,
          # Every minute
          {"* * * * *", {Bot.Infractions, :clear_expired_infractions, []}},
          {"@daily", {Bot.Cogs.Room, :remove_personal_channels, []}},
+         {"0 * * * *", {Bot.Cogs.Admin.Stats, :stats_for_servers, []}},
        ]
 
 
@@ -48,7 +49,12 @@ config :bot,
        faceit_api_key: System.get_env("FACEIT_API_KEY"),
        redis_host: System.get_env("REDIS_HOST"),
        redis_port: System.get_env("REDIS_PORT"),
-       redis_password: System.get_env("REDIS_PASSWORD")
+       redis_password: System.get_env("REDIS_PASSWORD"),
+       mongo_username: System.get_env("MONGO_USERNAME"),
+       mongo_password: System.get_env("MONGO_PASSWORD"),
+       mongo_host: System.get_env("MONGO_HOST"),
+       mongo_database: System.get_env("MONGO_DATABASE"),
+       stats_server_url: System.get_env("STATS_SERVER_URL")
 
 config :gen_tcp_accept_and_close, port: 4000
 config :gen_tcp_accept_and_close, ip: {0, 0, 0, 0}

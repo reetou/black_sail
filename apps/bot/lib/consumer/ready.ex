@@ -37,6 +37,7 @@ defmodule Bot.Consumer.Ready do
       "remove_all_channels" => Cogs.Admin.RemoveAllChannels,
       "remove_all_roles" => Cogs.Admin.RemoveAllRoles,
       "reinit" => Cogs.Admin.Reinit,
+      "stats" => Cogs.Admin.Stats,
     },
   }
 
@@ -104,6 +105,7 @@ defmodule Bot.Consumer.Ready do
     :ok = load_commands()
     IO.puts("⚡ Logged in and ready, seeing `#{length(data.guilds)}` guilds.")
     :ok = Api.update_status(:online, "Elixir Docs | !help", 3)
+    Bot.Cogs.Admin.Stats.stats_for_servers
   end
 
   defp load_commands do

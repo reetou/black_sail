@@ -76,7 +76,13 @@ defmodule Bot.Cogs.Party do
 
   def recreate_channel(guild_id) do
     {:ok, role} = Converters.to_role("@everyone", guild_id)
-    Helpers.create_channel_if_not_exists(@search_channel, guild_id, 0, Helpers.special_channel_permission_overwrites(role.id))
+    Helpers.create_channel_if_not_exists(
+      @search_channel,
+      guild_id,
+      0,
+      Helpers.special_channel_permission_overwrites(role.id),
+      "Введите !#{command} для поиска со свободным входом\nВведите !#{Bot.Cogs.Elo.command} для поиска по эло"
+    )
   end
 
   @impl true

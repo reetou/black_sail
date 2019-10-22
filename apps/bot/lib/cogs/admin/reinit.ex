@@ -173,6 +173,33 @@ defmodule Bot.Cogs.Admin.Reinit do
       end
     end)
 
+    create_server_stats_channel = Task.async(fn ->
+      Logger.info("Create server stats channel #{guild_id}")
+      with {:ok, role} = Converters.to_role("@everyone", guild_id),
+           {:ok, %{id: channel_id}} <- Helpers.create_channel_if_not_exists(
+             Admin.Stats.channel_name,
+             guild_id,
+             0,
+             [
+               %{
+                 type: "role",
+                 id: role.id,
+                 deny: Permission.to_bit(:send_messages)
+               }
+             ]
+           ) do
+        Task.start(
+          fn ->
+            Helpers.set_channel_rate_limit_per_user(channel_id)
+          end
+        )
+      else
+        err ->
+          Logger.error("Cannot recreate channel for Party, #{err}")
+          err
+      end
+    end)
+
     create_stats_channel = Task.async(fn ->
       Logger.info("Recreate channel for register command in guild #{guild_id}")
       with {:ok, %{ id: channel_id }} <- Register.recreate_channel(guild_id) do
@@ -198,6 +225,7 @@ defmodule Bot.Cogs.Admin.Reinit do
     Task.await(create_party_channel)
     Task.await(create_stats_channel)
     Task.await(create_rules_channel)
+    Task.await(create_server_stats_channel)
     Logger.info("Recreating roles for guild #{guild_id}")
     Register.recreate_roles(guild_id)
     Bot.Infractions.set_restricted_roles_positions(guild_id)
