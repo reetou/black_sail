@@ -35,6 +35,79 @@ defmodule Bot.Cogs.Admin.Stats do
   @command "room"
   @category_name "личные комнаты"
 
+  def highcharts_settings(type, guild, series) do
+    date_format = if type == :month, do: "{0M}.{YYYY}", else: "{YYYY} год"
+    %{
+      type: "png",
+      scale: 3,
+      infile: %{
+        chart: %{
+          type: "areaspline",
+          backgroundColor: "transparent",
+        },
+        legend: %{
+          layout: "vertical",
+          align: "left",
+          verticalAlign: "top",
+          x: 50,
+          y: 80,
+          floating: true,
+          borderWidth: 0,
+          borderRadius: 10,
+          backgroundColor: "#202225",
+          plotBackgroundColor: "#333666",
+          itemStyle: %{
+            color: "#FFF",
+          },
+        },
+        labels: %{
+          style: %{
+            color: "#E7E8E8",
+          },
+        },
+        title: %{
+          text: Timex.lformat!(Date.utc_today, "Данные сервера #{guild.name} за #{date_format}", "ru"),
+          style: %{
+            color: "#E7E8E8",
+          },
+        },
+        subtitle: %{
+          text: "Бот записывает каждый вход/выход пользователя с сервера",
+          style: %{
+            color: "#E7E8E8",
+          },
+        },
+        xAxis: %{
+          title: %{
+            text: (if type == :month, do: "День месяца", else: "Месяц"),
+            style: %{
+              color: "#E7E8E8",
+              fontWeight: "bold",
+            },
+          },
+          labels: %{
+            style: %{
+              color: "#E7E8E8",
+            },
+          },
+          categories: Stats.categories(type),
+        },
+        yAxis: %{
+          title: %{
+            text: "Уникальных пользователей",
+            style: %{
+              color: "#E7E8E8",
+              fontWeight: "bold",
+            },
+          },
+        },
+        credits: %{ enabled: false },
+        colors: ["#43B581", "#F04747"],
+        series: series,
+      }
+    }
+  end
+
   def channel_name, do: @channel_name
 
   @impl true
@@ -73,83 +146,13 @@ defmodule Bot.Cogs.Admin.Stats do
     Helpers.reply_and_delete_message(msg.channel_id, "<@#{msg.author.id}>, нужно указать тип статистики: year или month", 20000)
   end
 
-  def stats(guild_id, type, channel_id) when type == :month do
+  def stats(guild_id, type, channel_id) do
     series = Stats.get_income_outcome_stats(guild_id, type)
            |> IO.inspect(label: "DATA FORMATTED FOR REQUEST")
     {:ok, guild} = GuildCache.get(guild_id)
-    encoded = Jason.encode!(%{
-#      async: true,
-#      noDownload: true,
-      type: "png",
-      scale: 3,
-      infile: %{
-        chart: %{
-          type: "areaspline",
-          backgroundColor: "transparent",
-        },
-        legend: %{
-          layout: "vertical",
-          align: "left",
-          verticalAlign: "top",
-          x: 50,
-          y: 80,
-          floating: true,
-          borderWidth: 0,
-          borderRadius: 10,
-          backgroundColor: "#202225",
-          plotBackgroundColor: "#333666",
-          itemStyle: %{
-            color: "#FFF",
-          },
-        },
-        labels: %{
-          style: %{
-            color: "#E7E8E8",
-          },
-        },
-        title: %{
-          text: Timex.lformat!(Date.utc_today, "Данные сервера #{guild.name} за {0M}.{YYYY}", "ru"),
-          style: %{
-            color: "#E7E8E8",
-          },
-        },
-        subtitle: %{
-          text: "Бот записывает каждый вход/выход пользователя с сервера",
-          style: %{
-            color: "#E7E8E8",
-          },
-        },
-        xAxis: %{
-          title: %{
-            text: "День месяца",
-            style: %{
-              color: "#E7E8E8",
-              fontWeight: "bold",
-            },
-          },
-          labels: %{
-            style: %{
-              color: "#E7E8E8",
-            },
-          },
-          categories: Stats.categories(type),
-        },
-        yAxis: %{
-          title: %{
-            text: "Уникальных пользователей",
-            style: %{
-              color: "#E7E8E8",
-              fontWeight: "bold",
-            },
-          },
-        },
-        credits: %{ enabled: false },
-        colors: ["#43B581", "#F04747"],
-        series: series
-      }
-    })
+    settings = highcharts_settings(type, guild, series)
+    encoded = Jason.encode!(settings)
     response = HTTPoison.post!(fetch_env!(:bot, :stats_server_url), encoded, [{"Content-Type", "application/json"}])
-    |> IO.inspect(label: "Response at my export server", binaries: :as_strings)
     unless channel_id == nil do
       send_stats(%{ body: response.body, name: "stats.png" }, channel_id)
     else

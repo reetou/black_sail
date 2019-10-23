@@ -116,10 +116,20 @@ defmodule Bot.Stats do
       |> IO.inspect(label: "Will filled fields")
   end
 
+  def parse_data(data, type) when type == :year do
+    1..String.to_integer(Timex.format!(Date.utc_today, "{M}"))
+    |> Enum.map(fn x -> data_for_month(data, x) end)
+  end
+
   def day_value(map) do
     map
     |> Map.get("_id")
     |> Map.get("day")
+  end
+
+  def month_value(map) do
+    map
+    |> Map.get("_id")
   end
 
   def data_for_day(data, day) do
@@ -127,6 +137,15 @@ defmodule Bot.Stats do
       data
       |> Enum.filter(fn x -> day_value(x) == day end)
       |> Enum.map(fn x -> Map.put(x, "day", day_value(x)) end)
+      |> List.first
+    unless data_map == nil, do: Map.get(data_map, "count"), else: 0
+  end
+
+  def data_for_month(data, month) do
+    data_map =
+      data
+      |> Enum.filter(fn x -> month_value(x) == month end)
+      |> Enum.map(fn x -> Map.put(x, "month", month_value(x)) end)
       |> List.first
     unless data_map == nil, do: Map.get(data_map, "count"), else: 0
   end
@@ -143,6 +162,15 @@ defmodule Bot.Stats do
     range = Date.range(Timex.beginning_of_month(Date.utc_today), Date.utc_today)
     |> Enum.map(fn x ->
       Timex.lformat!(x, "{D}", "ru")
+    end)
+  end
+
+  def categories(type) when type == :year do
+    months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+    current_date = Date.utc_today
+    1..String.to_integer(Timex.format!(Date.utc_today, "{M}"))
+    |> Enum.map(fn x ->
+      Enum.at(months, x - 1)
     end)
   end
 
