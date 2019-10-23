@@ -165,13 +165,17 @@ defmodule Bot.Cogs.Admin.Stats do
   end
 
   def stats_for_servers do
+    Logger.debug("Getting stats for servers...")
     GuildCache.all
     |> Enum.map(fn %{id: guild_id, channels: channels, name: name} ->
-      case Enum.find(channels, fn {channel_id, ch} -> ch.name == @channel_name end) do
+      chan_name = Helpers.logs_channel
+      Logger.debug("Looking for channel name #{chan_name} in guild #{name}")
+      case Enum.find(channels, fn {channel_id, ch} -> ch.name == Helpers.logs_channel end) do
         nil ->
-          Logger.debug("No channel #{@channel_name} for guild #{name}, id: #{guild_id}, ignoring getting stats for server")
-          Bot.Infractions.send_to_log("Не найден канал #{@channel_name}, не могу запостить регулярную статистику", guild_id)
+          Logger.debug("No channel #{chan_name} for guild #{name}, id: #{guild_id}, ignoring getting stats for server")
+          Bot.Infractions.send_to_log("Не найден канал #{chan_name}, не могу запостить регулярную статистику", guild_id)
         {channel_id, chan} ->
+          Logger.debug("Found channel #{chan_name}")
           IO.inspect(guild_id, label: "Guild id")
           IO.inspect(channel_id, label: "CHAN ID")
           stats(guild_id, :month, channel_id)
