@@ -2,7 +2,11 @@ defmodule Bot.FaceIT do
   use HTTPoison.Base
   alias Nostrum.Api
   alias Nostrum.Struct.{ Embed }
-  alias Bot.{Helpers, Cogs.Register}
+  alias Bot.{
+    Helpers,
+    Cogs.Register,
+    Cogs.Update,
+  }
   import Embed
 
   @endpoint "https://open.faceit.com/data/v4"
@@ -69,8 +73,8 @@ defmodule Bot.FaceIT do
 #                |> put_field("Ливер", player_leaver)
 #                |> put_field("АФКер", player_afker)
                 |> put_cs_go_stats(player_id, user_id, guild_id)
-                |> put_color(0x9768d1)
-                |> put_footer("Для получения своей статистики введи !register или !update")
+                |> put_color(0xde9b35)
+                |> put_footer("Для получения своей статистики введи !#{Register.command} или !#{Update.command}")
         Api.create_message!(channel_id, embed: embed)
         {:ok, nickname}
       {:ok, %{ status_code: 200, body: %{ "games" => games } }} when map_size(games) == 0 ->
