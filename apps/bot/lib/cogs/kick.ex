@@ -104,7 +104,6 @@ defmodule Bot.Cogs.Kick do
         args
       ) do
     with {:ok, %{id: everyone_role_id}} <- Converters.to_role("@everyone", guild_id),
-         {:ok, %Channel{}} <- Room.get_personal_channel(guild_id, username <> "#" <> discriminator),
          {:ok, %Channel{} = channel_to_kick_from} <- Helpers.get_user_current_personal_or_party_voice_channel(msg.author.id, guild_id) do
       case Helpers.get_user_current_personal_or_party_voice_channel(msg.author.id, guild_id) do
         {:ok, %Channel{} = channel_to_kick_from} ->
