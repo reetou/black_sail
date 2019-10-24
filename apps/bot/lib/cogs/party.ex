@@ -18,6 +18,7 @@ defmodule Bot.Cogs.Party do
     Helpers,
     PartySearchParticipants,
     Cogs.Register,
+    Cogs.Elo,
   }
   alias Nosedrum.{
     Predicates,
@@ -34,6 +35,7 @@ defmodule Bot.Cogs.Party do
     Guild,
     Channel,
     Invite,
+    Overwrite,
   }
   alias Nostrum.Cache.GuildCache
   alias Guild.Member
@@ -145,8 +147,8 @@ defmodule Bot.Cogs.Party do
       Logger.debug("Restrict by ELO enabled, set permissions depending on ELO role: #{elo_role}.")
       actual_role_index = get_role_index(elo_role, override_index)
       {:ok} = Api.edit_channel_permissions(voice_channel_id, everyone_role_id, Helpers.deny_speak_and_connect :role)
-      set_permissions_by_index(actual_role_index, voice_channel_id, guild_id, override_index, :allow)
-      set_permissions_by_index(actual_role_index, voice_channel_id, guild_id, override_index, :deny)
+      Task.start(fn -> set_permissions_by_index(actual_role_index, voice_channel_id, guild_id, override_index, :allow) end)
+      Task.start(fn -> set_permissions_by_index(actual_role_index, voice_channel_id, guild_id, override_index, :deny) end)
     else
       Logger.debug("ELO role is #{if elo_role == nil, do: "UNKNOWN", else: elo_role} or restrict by ELO disabled, allowing everyone to connect and speak in channel #{voice_channel_id}")
       Task.start(fn ->
@@ -178,6 +180,24 @@ defmodule Bot.Cogs.Party do
     PartySearchParticipants.write_party_search_message(data)
   end
 
+  def create_empty_party_message(msg) do
+    %Embed{}
+    |> put_title("Эта команда распалась")
+    |> put_description("""
+Но вы можете создать свою!
+Команды:
+
+**Со свободным входом:**
+```
+#{Enum.join(usage, "\n")}
+```
+**С ограничением по FaceIT эло:**
+```
+#{Enum.join(Elo.usage, "\n")}
+```
+""")
+  end
+
   def create_party_message(msg, invite, elo_role \\ nil, override_index \\ nil) do
     %{
       guild_id: guild_id,
@@ -195,6 +215,8 @@ defmodule Bot.Cogs.Party do
     title = if placesLeft != 0, do: "Ищу +#{placesLeft}", else: "Пати собрано"
     embed = %Embed{}
             |> put_title(title)
+            |> put_footer("Хотите собрать пати? Введите !#{@command} или !#{Elo.command}")
+            |> put_color(0xde9b35)
     embed_description = Enum.reduce(
       members,
       "",
@@ -293,27 +315,26 @@ defmodule Bot.Cogs.Party do
   end
 
   def set_permissions_for_party_voice_channel(voice_channel_id, guild_id) do
-    Register.elo_roles
-    |> Enum.map(fn role_data ->
-      role_data
-      |> Tuple.to_list
-      |> List.first
-    end)
-    |> Enum.map(fn name ->
-      case Converters.to_role(name, guild_id) do
-        {:ok, role} -> role
-        _ -> nil
-      end
-    end)
-    |> Enum.filter(fn r -> r != nil end)
-    |> Enum.each(fn %{id: id, name: name} ->
-      Logger.debug("Delete permissions for role #{name} from channel #{voice_channel_id}")
-      Api.delete_channel_permissions(voice_channel_id, id)
-    end)
-    Task.start(fn ->
-      {:ok, %{ id: everyone_role_id }} = Converters.to_role("@everyone", guild_id)
-      Api.edit_channel_permissions(voice_channel_id, everyone_role_id, Helpers.allow_speak_and_connect :role)
-    end)
+    {:ok, channel} = Api.get_channel(voice_channel_id)
+    {:ok, %{ id: everyone_role_id }} = Converters.to_role("@everyone", guild_id)
+    roles_ids =
+        Register.elo_roles
+        |> Enum.map(fn {role_name, opts} -> role_name end)
+        |> Enum.map(fn name ->
+          case Converters.to_role(name, guild_id) do
+            {:ok, role} -> role.id
+            _ -> nil
+          end
+        end)
+        |> Enum.filter(fn r -> r != nil end)
+    everyone_overwrite = struct(Overwrite, Map.put(Helpers.allow_speak_and_connect(:role), :id, everyone_role_id))
+    new_overwrites =
+      channel.permission_overwrites
+      |> Enum.filter(fn overwrite -> overwrite.id not in roles_ids and overwrite.id != everyone_role_id end)
+      |> Enum.concat(List.wrap(everyone_overwrite))
+      |> IO.inspect(label: "New overwrites")
+    Logger.debug("Modifying guild channel permissions without elo roles and with allowed everyone")
+    Api.modify_channel!(voice_channel_id, permission_overwrites: new_overwrites)
   end
 
   def set_permissions_by_index(current_index, voice_channel_id, guild_id, override_index, type) do
@@ -352,8 +373,6 @@ defmodule Bot.Cogs.Party do
       end)
       |> Enum.filter(fn r -> r != nil end)
       |> Enum.map(fn %{id: id, name: name} ->
-        Logger.debug("Allow speak and connect for role #{name} to channel #{voice_channel_id}")
-#        Api.edit_channel_permissions(voice_channel_id, id, Helpers.allow_speak_and_connect :role)
         Map.put(Helpers.allow_speak_and_connect(:role), :id, id)
       end)
     {:ok, channel} = Api.get_channel(voice_channel_id)

@@ -57,7 +57,9 @@ defmodule Bot.PartySearchParticipants do
         Api.edit_message!(msg, embed: updated_embed)
       else
         Logger.debug("Deleting empty channel because members are empty")
-        Api.delete_message(text_channel_id, message_id)
+        delete_party_message_from_history(msg.id)
+        Api.edit_message!(msg, embed: Party.create_empty_party_message(msg))
+#        Api.delete_message(text_channel_id, message_id)
       end
     else err -> err
                 |> IO.inspect(label: "Cannot edit message")
@@ -84,6 +86,12 @@ defmodule Bot.PartySearchParticipants do
           Api.delete_message(row.text_channel_id, row.message_id)
         end)
       end)
+    end)
+  end
+
+  def delete_party_message_from_history(message_id) do
+    Memento.transaction(fn ->
+      Memento.Query.delete(Bot.PartySearchParticipants, message_id)
     end)
   end
 
